@@ -12,8 +12,11 @@ class m250425_122404_create_profiles_table extends Migration
      */
     public function safeUp()
     {
-        $this->createTable('{{%profiles}}', [
+        $this->createTable('profiles', [
             'id' => $this->primaryKey(),
+            'surename' => $this->string()->notNull(),
+            'firstname' => $this->string()->notNull(),
+            'patronimyc' => $this->string()->notNull(),
         ]);
     }
 

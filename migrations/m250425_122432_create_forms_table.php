@@ -12,8 +12,9 @@ class m250425_122432_create_forms_table extends Migration
      */
     public function safeUp()
     {
-        $this->createTable('{{%forms}}', [
+        $this->createTable('forms', [
             'id' => $this->primaryKey(),
+            'form_name' => $this->string()->notNull(),
         ]);
     }
 
@@ -22,6 +23,6 @@ class m250425_122432_create_forms_table extends Migration
      */
     public function safeDown()
     {
-        $this->dropTable('{{%forms}}');
+        $this->dropTable('forms');
     }
 }

@@ -12,9 +12,15 @@ class m250425_122515_create_form_field_autocomplete_table extends Migration
      */
     public function safeUp()
     {
-        $this->createTable('{{%form_field_autocomplete}}', [
+        $this->createTable('form_field_autocomplete', [
             'id' => $this->primaryKey(),
+            'field_id' => $this->integer()->notNull(),
+            'content' => $this->string()->notNull(),
         ]);
+
+        $this->createIndex('idx-form_field_autocomplete_field_id', 'form_field_autocomplete', 'field_id');
+
+        $this->addForeignKey('fk_form_field_autocomplete_field', 'form_field_autocomplete', 'field_id', 'form_fields', 'id');
     }
 
     /**
@@ -22,6 +28,8 @@ class m250425_122515_create_form_field_autocomplete_table extends Migration
      */
     public function safeDown()
     {
-        $this->dropTable('{{%form_field_autocomplete}}');
+        $this->dropForeignKey('fk_form_field_autocomplete_field', 'form_field_autocomplete');
+        $this->dropIndex('idx-form_field_autocomplete_field_id', 'form_field_autocomplete');
+        $this->dropTable('form_field_autocomplete');
     }
 }
