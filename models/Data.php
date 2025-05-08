@@ -9,7 +9,7 @@ use Yii;
  *
  * @property int $id
  * @property int $profile_id
- * @property int $form_id
+ * @property int $field_id
  * @property string $data
  *
  * @property Form $forms
@@ -33,10 +33,10 @@ class Data extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['profile_id', 'form_id', 'data'], 'required'],
-            [['profile_id', 'form_id'], 'integer'],
+            [['profile_id', 'field_id', 'data'], 'required'],
+            [['profile_id', 'field_id'], 'integer'],
             [['data'], 'string'],
-            [['form_id'], 'exist', 'skipOnError' => true, 'targetClass' => Form::class, 'targetAttribute' => ['form_id' => 'id']],
+            [['field_id'], 'exist', 'skipOnError' => true, 'targetClass' => FormField::class, 'targetAttribute' => ['field_id' => 'id']],
             [['profile_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['profile_id' => 'id']],
         ];
     }
@@ -49,7 +49,7 @@ class Data extends \yii\db\ActiveRecord
         return [
             'id' => Yii::t('app', 'ID'),
             'profile_id' => Yii::t('app', 'Profile ID'),
-            'form_id' => Yii::t('app', 'Form ID'),
+            'field_id' => Yii::t('app', 'Field ID'),
             'data' => Yii::t('app', 'Data'),
         ];
     }
@@ -61,7 +61,7 @@ class Data extends \yii\db\ActiveRecord
      */
     public function getForms()
     {
-        return $this->hasOne(Form::class, ['id' => 'form_id']);
+        return $this->hasOne(Form::class, ['id' => 'field_id']);
     }
 
     /**
@@ -73,5 +73,17 @@ class Data extends \yii\db\ActiveRecord
     {
         return $this->hasOne(Profile::class, ['id' => 'profile_id']);
     }
+
+    public function getFormField()
+    {
+        return $this->hasOne(FormField::class, ['id' => 'field_id']);
+    }
+
+    // Связь с моделью Profile
+    public function getProfile()
+    {
+        return $this->hasOne(Profile::class, ['id' => 'profile_id']);
+    }
+
 
 }

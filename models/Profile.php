@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "profiles".
@@ -14,7 +15,7 @@ use Yii;
  *
  * @property Data[] $datas
  */
-class Profile extends \yii\db\ActiveRecord
+class Profile extends ActiveRecord
 {
 
 

@@ -88,4 +88,14 @@ class FormField extends \yii\db\ActiveRecord
         return $this->hasOne(Form::class, ['id' => 'form_id']);
     }
 
+    public function getType()
+    {
+        return $this->hasOne(FormFieldType::class, ['id' => 'type_id']);
+    }
+
+    public function getAutocompleteOptions()
+    {
+        return $this->hasMany(FormFieldAutocomplete::class, ['field_id' => 'id']);
+    }
+
 }

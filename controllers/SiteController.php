@@ -2,6 +2,9 @@
 
 namespace app\controllers;
 
+use app\models\Data;
+use app\models\Form;
+use app\models\FormField;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -125,4 +128,103 @@ class SiteController extends Controller
     {
         return $this->render('about');
     }
+
+    public function actionProfile()
+    {
+        $profileId = Yii::$app->user->id;
+
+        // Получаем все формы и поля
+        $forms = Form::find()->all();
+        $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
+
+        // Получаем все данные пользователя по profile_id
+        $rawData = Data::find()
+            ->where(['profile_id' => 1])
+            ->orderBy(['field_id' => SORT_ASC])
+            ->all();
+
+        // Проверим, что данные загружены
+        Yii::info('Raw Data: ' . json_encode($rawData), 'profile');  // Логирование для проверки
+
+        // Индексируем данные по field_id
+        $groupedData = [];
+        foreach ($rawData as $data) {
+            $groupedData[$data->field_id][] = $data->data;
+        }
+
+        // Логируем группированные данные для отладки
+        Yii::info('Grouped Data: ' . json_encode($groupedData), 'profile');
+
+        return $this->render('profile', [
+            'forms' => $forms,
+            'fields' => $formFields,
+            'userData' => $groupedData,
+        ]);
+    }
+
+
+
+
+
+    public function actionGetFormFields($form_id)
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        $fields = FormField::find()->where(['form_id' => $form_id])->all();
+
+        return array_map(fn($f) => [
+            'id' => $f->id,
+            'field_name' => $f->field_name
+        ], $fields);
+    }
+
+
+
+    public function actionSaveFormData()
+    {
+        $post = Yii::$app->request->post();
+        $profileId = 1;
+        $fields = $post['fields'];
+
+        // Стартуем транзакцию
+        $transaction = Yii::$app->db->beginTransaction();
+
+        try {
+            foreach ($fields as $fieldId => $value) {
+                $data = new Data();
+                $data->profile_id = $profileId;
+                $data->field_id = $fieldId;
+                $data->data = $value;
+
+                if (!$data->save()) {
+                    Yii::error([
+                        'errors' => $data->errors,
+                        'field_id' => $fieldId,
+                        'value' => $value
+                    ], __METHOD__);
+                    throw new \Exception("Ошибка при сохранении данных для поля ID: $fieldId");
+                }
+            }
+
+            $transaction->commit();
+            return $this->asJson(['status' => 'success', 'message' => 'Данные успешно сохранены']);
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            return $this->asJson(['status' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function actionViewFormData($form_id)
+    {
+        $userData = Data::find()
+            ->joinWith('formField')
+            ->where(['data.form_id' => $form_id])
+            ->andWhere(['data.profile_id' => 1])
+            ->all();
+
+        return $this->render('view-form-data', [
+            'userData' => $userData,
+        ]);
+    }
+
+
 }
