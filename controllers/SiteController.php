@@ -131,30 +131,36 @@ class SiteController extends Controller
 
     public function actionProfile()
     {
+        // Получаем текущий ID пользователя
         $profileId = Yii::$app->user->id;
 
-        // Получаем все формы и поля
+        // Загружаем формы и поля
         $forms = Form::find()->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 
-        // Получаем все данные пользователя по profile_id
+        // Изменяем запрос, чтобы получать данные для текущего пользователя
         $rawData = Data::find()
-            ->where(['profile_id' => 1])
+            ->where(['profile_id' => 1]) // Используем ID текущего пользователя
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
 
-        // Проверим, что данные загружены
-        Yii::info('Raw Data: ' . json_encode($rawData), 'profile');  // Логирование для проверки
+        // Логируем ID полученных данных
+        Yii::info('Raw Data IDs: ' . implode(',', array_map(fn($d) => $d->id, $rawData)), 'profile');
 
-        // Индексируем данные по field_id
+        // Группируем данные по field_id, добавляем ID и data
         $groupedData = [];
         foreach ($rawData as $data) {
-            $groupedData[$data->field_id][] = $data->data;
+            // Группируем данные по field_id
+            $groupedData[$data->field_id][] = [
+                'id' => $data->id,      // Сохраняем ID записи
+                'data' => $data->data,  // Сохраняем данные
+            ];
         }
 
-        // Логируем группированные данные для отладки
+        // Логируем сгруппированные данные
         Yii::info('Grouped Data: ' . json_encode($groupedData), 'profile');
 
+        // Передаем данные в представление
         return $this->render('profile', [
             'forms' => $forms,
             'fields' => $formFields,
@@ -166,27 +172,24 @@ class SiteController extends Controller
 
 
 
+
     public function actionGetFormFields($form_id)
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
-        $fields = FormField::find()->where(['form_id' => $form_id])->all();
-
-        return array_map(fn($f) => [
-            'id' => $f->id,
-            'field_name' => $f->field_name
-        ], $fields);
+        // Получаем поля формы по ID
+        $formFields = FormField::find()->where(['form_id' => $form_id])->all();
+        return $this->asJson($formFields);
     }
 
 
 
-    public function actionSaveFormData()
+    public function actionCreateFormData()
     {
-        $post = Yii::$app->request->post();
-        $profileId = 1;
-        $fields = $post['fields'];
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
-        // Стартуем транзакцию
         $transaction = Yii::$app->db->beginTransaction();
+        $fields = Yii::$app->request->post('fields', []);
+        $formId = Yii::$app->request->post('form_id');
+        $profileId = 1; // Можно использовать актуальный ID профиля
 
         try {
             foreach ($fields as $fieldId => $value) {
@@ -201,17 +204,48 @@ class SiteController extends Controller
                         'field_id' => $fieldId,
                         'value' => $value
                     ], __METHOD__);
-                    throw new \Exception("Ошибка при сохранении данных для поля ID: $fieldId");
+                    throw new \Exception("Ошибка при создании записи для поля ID: $fieldId");
                 }
             }
 
             $transaction->commit();
-            return $this->asJson(['status' => 'success', 'message' => 'Данные успешно сохранены']);
+            return ['status' => 'success', 'message' => 'Новая запись успешно добавлена'];
         } catch (\Exception $e) {
             $transaction->rollBack();
-            return $this->asJson(['status' => 'error', 'message' => $e->getMessage()]);
+            return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
+
+
+
+    public function actionUpdateFormData()
+    {
+        $formId = Yii::$app->request->post('form_id');
+        $recordIds = json_decode(Yii::$app->request->post('data_ids', '[]'), true);
+        $fieldValues = Yii::$app->request->post('field_values', []);
+
+        if (!is_array($recordIds) || count($recordIds) !== count($fieldValues)) {
+            Yii::$app->session->setFlash('error', 'Ошибка при передаче данных.');
+            return $this->redirect(['view', 'id' => $formId]);
+        }
+
+        $i = 0;
+        foreach ($fieldValues as $fieldId => $value) {
+            $recordId = $recordIds[$i++] ?? null;
+            if ($recordId) {
+                $record = Data::findOne($recordId);
+                if ($record) {
+                    $record->data = $value;
+                    $record->save();
+                }
+            }
+        }
+
+        Yii::$app->session->setFlash('success', 'Данные успешно обновлены.');
+        return $this->redirect(['view', 'id' => $formId]);
+    }
+
+
 
     public function actionViewFormData($form_id)
     {

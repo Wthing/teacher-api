@@ -47,4 +47,9 @@ class Form extends \yii\db\ActiveRecord
         ];
     }
 
+    public function getFormFields()
+    {
+        return $this->hasMany(FormField::class, ['form_id' => 'id']);
+    }
+
 }

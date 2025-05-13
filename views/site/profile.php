@@ -1,102 +1,181 @@
 <?php
-/** @var array $forms */
-/** @var array $fields */
-/** @var array $userData */
-$this->registerJsFile('https://code.jquery.com/jquery-3.6.0.min.js');
+use yii\helpers\Html;
+use yii\helpers\Json;
 ?>
 
-<!-- Модальное окно -->
-<div id="formModal" style="display:none; position:fixed; top:10%; left:20%; background:#fff; padding:20px; border:1px solid #ccc; z-index:1000;">
-    <form id="dynamicForm">
-        <div id="modalFields"></div>
-        <input type="hidden" name="form_id" id="modalFormId">
-        <button type="submit">Сохранить</button>
-        <button type="button" id="closeModal">Отмена</button>
-    </form>
-</div>
-
-<!-- Основной вывод -->
-<?php foreach ($forms as $form): ?>
-    <div class="form-block" style="margin-bottom: 30px;">
-        <h3>
-            <?= htmlspecialchars($form->form_name) ?>
-            <button class="add-field-btn" data-form="<?= $form->id ?>">Добавить</button>
-        </h3>
-
+<div class="container mt-3">
+    <?php foreach ($forms as $form): ?>
         <?php
-        $formFields = array_filter($fields, fn($f) => $f->form_id === $form->id);
-
+        $formFields = $form->formFields;
         $fieldDataMap = [];
-        $maxCount = 0;
 
         foreach ($formFields as $field) {
-            $fieldId = $field->id;
-            $fieldName = $field->field_name;
-            $values = $userData[$fieldId] ?? [];
-
-            $fieldDataMap[$fieldName] = $values;
-            $maxCount = max($maxCount, count($values));
+            $fieldDataMap[$field->id] = $userData[$field->id] ?? [];
         }
 
-        for ($i = 0; $i < $maxCount; $i++):
-            $row = [];
+        $maxCount = 0;
+        foreach ($fieldDataMap as $dataRows) {
+            $maxCount = max($maxCount, count($dataRows));
+        }
+        ?>
+
+        <h3 class="mt-4">Данные формы: <?= Html::encode($form->form_name) ?></h3>
+
+        <!-- Кнопка "Добавить новую запись" -->
+        <div class="col-md-12 text-right mb-3">
+            <button class="btn btn-success btn-sm create-field-btn"
+                    data-form="<?= $form->id ?>"
+                    data-fields='<?= Json::encode($formFields) ?>'>
+                ➕ Добавить новую запись
+            </button>
+        </div>
+
+        <?php for ($i = 0; $i < $maxCount; $i++): ?>
+            <?php
+            $rowDisplay = [];
             $rowData = [];
+            $recordIds = [];
 
             foreach ($formFields as $field) {
                 $fieldId = $field->id;
-                $value = $userData[$fieldId][$i] ?? 'Нет данных';
-                $row[] = $value;
+                $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                $rowDisplay[] = Html::encode(is_array($value) ? implode(', ', $value) : $value);
                 $rowData[$fieldId] = $value;
+
+                if (isset($fieldDataMap[$fieldId][$i]['id'])) {
+                    $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
+                }
             }
+            ?>
 
-            echo '<div style="margin-bottom:10px;">' .
-                implode(' - ', $row) .
-                ' <button class="edit-field-btn" data-form="' . $form->id . '" data-index="' . $i . '" data-values=\'' . json_encode($rowData) . '\'>✎</button>' .
-                '</div>';
-        endfor;
+            <div class="row mb-2">
+                <div class="col-md-12">
+                    <?= implode(' - ', $rowDisplay) ?>
+                </div>
+                <div class="col-md-12 text-right">
+                    <button class="btn btn-warning btn-sm edit-field-btn"
+                            data-form="<?= $form->id ?>"
+                            data-ids='<?= Json::encode($recordIds) ?>'
+                            data-values='<?= Json::encode($rowData) ?>'
+                            data-fields='<?= Json::encode($formFields) ?>'>
+                        ✎
+                    </button>
+                </div>
+            </div>
+        <?php endfor; ?>
+    <?php endforeach; ?>
+</div>
 
-        ?>
+<!-- Модальное окно для редактирования -->
+<div class="modal fade" id="editFieldModal" tabindex="-1" role="dialog" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="editForm" method="post" action="/site/update-form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editFieldModalLabel">Редактировать данные</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="modalFieldsContainer">
+                    <!-- Поля вставляются через JS -->
+                </div>
+                <input type="hidden" name="form_id" id="modalFormId">
+                <input type="hidden" name="data_ids" id="modalDataIds">
+                <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                </div>
+            </form>
+        </div>
     </div>
-<?php endforeach; ?>
+</div>
 
+<!-- Модальное окно для создания новой записи -->
+<div class="modal fade" id="createFieldModal" tabindex="-1" role="dialog" aria-labelledby="createFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="createForm" method="post" action="/site/create-form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createFieldModalLabel">Создать новую запись</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="createFieldsContainer">
+                    <!-- Динамически вставляемые поля -->
+                </div>
+                <input type="hidden" name="form_id" id="createFormId">
+                <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Создать</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-<!-- Скрипт -->
 <?php
-$this->registerJs("
-    $('.add-field-btn').on('click', function() {
-        var formId = $(this).data('form');
-        $('#modalFormId').val(formId);
+$csrfToken = Yii::$app->request->getCsrfToken();
+$csrfParam = Yii::$app->request->csrfParam;
 
-        $.get('/site/get-form-fields', {form_id: formId}, function(data) {
-            $('#modalFields').html('');
-            for (var i = 0; i < data.length; i++) {
-                var field = data[i];
-                var html = '<div>' +
-                               '<label>' + field.field_name + '</label><br/>' +
-                               '<input type=\"text\" name=\"fields[' + field.id + ']\" />' +
-                           '</div>';
-                $('#modalFields').append(html);
-            }
-            $('#formModal').show();
-        });
+$js = <<<JS
+$('.edit-field-btn').on('click', function () {
+    var formId = $(this).data('form');
+    var recordIds = $(this).data('ids');
+    var fieldValues = $(this).data('values');
+    var formFields = $(this).data('fields');
+
+    $('#modalFormId').val(formId);
+    $('#modalDataIds').val(JSON.stringify(recordIds));
+
+    var container = $('#modalFieldsContainer');
+    container.empty();
+
+    formFields.forEach(function(field) {
+        var value = fieldValues[field.id] || '';
+        var input = $('<input>')
+            .attr('type', 'text')
+            .addClass('form-control')
+            .attr('name', 'field_values[' + field.id + ']')
+            .val(value);
+
+        var formGroup = $('<div>').addClass('form-group');
+        formGroup.append($('<label>').text(field.label));
+        formGroup.append(input);
+        container.append(formGroup);
     });
 
-    $('#closeModal').on('click', function() {
-        $('#formModal').hide();
+    $('#editFieldModal').modal('show');
+});
+
+$('.create-field-btn').on('click', function () {
+    var formId = $(this).data('form');
+    var formFields = $(this).data('fields');
+
+    $('#createFormId').val(formId);
+
+    var container = $('#createFieldsContainer');
+    container.empty();
+
+    formFields.forEach(function(field) {
+        var input = $('<input>')
+            .attr('type', 'text')
+            .addClass('form-control')
+            .attr('name', 'fields[' + field.id + ']')
+            .val('');
+
+        var formGroup = $('<div>').addClass('form-group');
+        formGroup.append($('<label>').text(field.label));
+        formGroup.append(input);
+        container.append(formGroup);
     });
 
-    $('#dynamicForm').on('submit', function(e) {
-        e.preventDefault();
-        $.post('/site/save-form-data', $(this).serialize(), function(response) {
-            if (response.status === 'success') {
-                alert(response.message); // Успех
-                location.reload(); // Перезагружаем страницу после сохранения
-            } else {
-                alert('Ошибка: ' + response.message); // Ошибка
-            }
-        }).fail(function() {
-            alert('Ошибка при отправке данных');
-        });
-    });
-");
+    $('#createFieldModal').modal('show');
+});
+JS;
+
+$this->registerJs($js);
 ?>
