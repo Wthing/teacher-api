@@ -1,6 +1,8 @@
 <?php
 use yii\helpers\Html;
 use yii\helpers\Json;
+
+/** @var \app\models\Form[] $forms */
 ?>
 
 <div class="container mt-3">
