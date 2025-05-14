@@ -186,9 +186,10 @@ class SiteController extends Controller
     public function actionCreateFormData()
     {
         $transaction = Yii::$app->db->beginTransaction();
-        $fields = Yii::$app->request->post('fields', []);
+        $fields = Yii::$app->request->post('field_values', []);
+
         $formId = Yii::$app->request->post('form_id');
-        $profileId = 1; // Можно использовать актуальный ID профиля
+        $profileId = 1;
 
         try {
             foreach ($fields as $fieldId => $value) {
@@ -217,10 +218,6 @@ class SiteController extends Controller
         }
     }
 
-
-
-
-
     public function actionUpdateFormData()
     {
         $formId = Yii::$app->request->post('form_id');
@@ -248,8 +245,6 @@ class SiteController extends Controller
         return $this->redirect('profile');
     }
 
-
-
     public function actionViewFormData($form_id)
     {
         $userData = Data::find()
@@ -263,5 +258,23 @@ class SiteController extends Controller
         ]);
     }
 
+    public function actionDeleteFormData()
+    {
+        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $dataIds = json_decode(Yii::$app->request->post('data_ids'), true);
+        if (!is_array($dataIds)) {
+            return ['success' => false, 'message' => 'Некорректный формат ID'];
+        }
+
+        foreach ($dataIds as $id) {
+            $fieldData = Data::findOne($id);
+            if ($fieldData) {
+                $fieldData->delete();
+            }
+        }
+
+        return ['success' => true];
+    }
 
 }

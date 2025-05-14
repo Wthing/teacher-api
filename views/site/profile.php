@@ -60,6 +60,11 @@ use yii\helpers\Json;
                             data-fields='<?= Json::encode($formFields) ?>'>
                         ✎
                     </button>
+                    <button class="btn btn-danger btn-sm delete-field-btn"
+                            data-ids='<?= Json::encode($recordIds) ?>'>
+                        🗑
+                    </button>
+
                 </div>
             </div>
         <?php endfor; ?>
@@ -136,11 +141,7 @@ $('.edit-field-btn').on('click', function () {
 
     formFields.forEach(function(field) {
         var value = fieldValues[field.id] || '';
-        var input = $('<input>')
-            .attr('type', 'text')
-            .addClass('form-control')
-            .attr('name', 'field_values[' + field.id + ']')
-            .val(value);
+        var input = generateInputByType(field.type_id, field.id, value);
 
         var formGroup = $('<div>').addClass('form-group');
         formGroup.append($('<label>').text(field.label));
@@ -161,20 +162,87 @@ $('.create-field-btn').on('click', function () {
     container.empty();
 
     formFields.forEach(function(field) {
-        var input = $('<input>')
-            .attr('type', 'text')
-            .addClass('form-control')
-            .attr('name', 'fields[' + field.id + ']')
-            .val('');
+        var input = generateInputByType(field.type_id, field.id, '');
 
         var formGroup = $('<div>').addClass('form-group');
-        formGroup.append($('<label>').text(field.label));
+        formGroup.append($('<label>').text(field.field_name));
         formGroup.append(input);
         container.append(formGroup);
     });
 
     $('#createFieldModal').modal('show');
 });
+
+$('.delete-field-btn').on('click', function () {
+    if (!confirm('Вы уверены, что хотите удалить эту запись?')) return;
+
+    var recordIds = $(this).data('ids');
+
+    $.ajax({
+        url: '/site/delete-form-data',
+        type: 'POST',
+        data: {
+            data_ids: JSON.stringify(recordIds),
+            '<?= $csrfParam ?>': '<?= $csrfToken ?>'
+        },
+        success: function () {
+            location.reload(); // перезагружаем страницу
+        },
+        error: function () {
+            alert('Ошибка при удалении данных');
+        }
+    });
+});
+
+
+function generateInputByType(typeId, fieldId, value) {
+    let input;
+
+    switch (typeId) {
+        case 1: // integer
+            input = $('<input>')
+                .attr('type', 'number')
+                .addClass('form-control')
+                .attr('name', 'field_values[' + fieldId + ']')
+                .val(value);
+            break;
+        case 2: // string
+            input = $('<input>')
+                .attr('type', 'text')
+                .addClass('form-control')
+                .attr('name', 'field_values[' + fieldId + ']')
+                .val(value);
+            break;
+        case 3: // date
+            input = $('<input>')
+                .attr('type', 'date')
+                .addClass('form-control')
+                .attr('name', 'field_values[' + fieldId + ']')
+                .val(value);
+            break;
+        case 4: // url
+            input = $('<input>')
+                .attr('type', 'url')
+                .addClass('form-control')
+                .attr('name', 'field_values[' + fieldId + ']')
+                .val(value);
+            break;
+        case 5: // file
+            input = $('<input>')
+                .attr('type', 'file')
+                .addClass('form-control')
+                .attr('name', 'field_values[' + fieldId + ']');
+            break;
+        default:
+            input = $('<input>')
+                .attr('type', 'text')
+                .addClass('form-control')
+                .attr('name', 'field_values[' + fieldId + ']')
+                .val(value);
+    }
+
+    return input;
+}
 JS;
 
 $this->registerJs($js);
