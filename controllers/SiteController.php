@@ -7,6 +7,7 @@ use app\models\Form;
 use app\models\FormField;
 use Yii;
 use yii\filters\AccessControl;
+use yii\helpers\Url;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
@@ -184,8 +185,6 @@ class SiteController extends Controller
 
     public function actionCreateFormData()
     {
-        Yii::$app->response->format = Response::FORMAT_JSON;
-
         $transaction = Yii::$app->db->beginTransaction();
         $fields = Yii::$app->request->post('fields', []);
         $formId = Yii::$app->request->post('form_id');
@@ -209,12 +208,16 @@ class SiteController extends Controller
             }
 
             $transaction->commit();
-            return ['status' => 'success', 'message' => 'Новая запись успешно добавлена'];
+            Yii::$app->session->setFlash('success', 'Новая запись успешно добавлена.');
+            return $this->redirect('profile');
         } catch (\Exception $e) {
             $transaction->rollBack();
-            return ['status' => 'error', 'message' => $e->getMessage()];
+            Yii::$app->session->setFlash('error', $e->getMessage());
+            return $this->redirect('profile');
         }
     }
+
+
 
 
 
@@ -242,7 +245,7 @@ class SiteController extends Controller
         }
 
         Yii::$app->session->setFlash('success', 'Данные успешно обновлены.');
-        return $this->redirect(['view', 'id' => $formId]);
+        return $this->redirect('profile');
     }
 
 
