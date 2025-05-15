@@ -327,6 +327,14 @@ class SiteController extends Controller
             $value = $fieldValues[$fieldId] ?? null;
 
             if ($file && is_file($file->tempName)) {
+                // Удаляем старый файл, если он есть и отличается от нового
+                if ($record->data && strpos($record->data, 'uploads/') === 0) {
+                    $oldFilePath = Yii::getAlias('@webroot/') . $record->data;
+                    if (is_file($oldFilePath)) {
+                        @unlink($oldFilePath);
+                    }
+                }
+
                 $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->firstname . '_' . $profile->surename);
                 $fileName = uniqid() . '_' . $safeName . '.' . $file->getExtension();
                 $uploadPath = $uploadDir . $fileName;
@@ -338,9 +346,17 @@ class SiteController extends Controller
                     return $this->redirect(Yii::$app->request->referrer);
                 }
             } elseif ($value !== null) {
+                // Если меняется значение, и был файл, удаляем файл
+                if ($record->data && strpos($record->data, 'uploads/') === 0) {
+                    $oldFilePath = Yii::getAlias('@webroot/') . $record->data;
+                    if (is_file($oldFilePath)) {
+                        @unlink($oldFilePath);
+                    }
+                }
                 $record->data = $value;
             } else {
-                continue; // ни файл, ни значение — пропускаем
+                // ни файл, ни значение — пропускаем
+                continue;
             }
 
             if (!$record->save()) {
@@ -353,6 +369,7 @@ class SiteController extends Controller
         Yii::$app->session->setFlash('success', 'Данные успешно обновлены');
         return $this->redirect(Yii::$app->request->referrer);
     }
+
 
 
 
