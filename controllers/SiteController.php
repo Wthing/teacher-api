@@ -271,37 +271,91 @@ class SiteController extends Controller
         return $this->redirect(Yii::$app->request->referrer);
     }
 
-
-
-
-
-
     public function actionUpdateFormData()
     {
-        $formId = Yii::$app->request->post('form_id');
-        $recordIds = json_decode(Yii::$app->request->post('data_ids', '[]'), true);
-        $fieldValues = Yii::$app->request->post('field_values', []);
+        $profile = Profile::findOne(1);
+        $request = Yii::$app->request;
 
-        if (!is_array($recordIds) || count($recordIds) !== count($fieldValues)) {
-            Yii::$app->session->setFlash('error', 'Ошибка при передаче данных.');
-            return $this->redirect(['profile', 'id' => $formId]);
+        if (!$request->isPost) {
+            throw new BadRequestHttpException('Only POST allowed');
         }
 
-        $i = 0;
-        foreach ($fieldValues as $fieldId => $value) {
-            $recordId = $recordIds[$i++] ?? null;
-            if ($recordId) {
-                $record = Data::findOne($recordId);
-                if ($record) {
-                    $record->data = $value;
-                    $record->save();
+        $formId = $request->post('form_id');
+        $fieldValues = $request->post('field_values', []);
+
+        if (empty($formId) || (empty($fieldValues) && empty($_FILES['field_files']['name']))) {
+            Yii::$app->session->setFlash('error', 'Форма или данные пустые');
+            return $this->redirect(Yii::$app->request->referrer);
+        }
+
+        $uploadDir = Yii::getAlias('@webroot/uploads/');
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $files = [];
+        if (isset($_FILES['field_files'])) {
+            foreach ($_FILES['field_files']['name'] as $fieldId => $name) {
+                if ($_FILES['field_files']['error'][$fieldId] === UPLOAD_ERR_OK) {
+                    $files[$fieldId] = new UploadedFile([
+                        'name' => $_FILES['field_files']['name'][$fieldId],
+                        'tempName' => $_FILES['field_files']['tmp_name'][$fieldId],
+                        'type' => $_FILES['field_files']['type'][$fieldId],
+                        'size' => $_FILES['field_files']['size'][$fieldId],
+                        'error' => $_FILES['field_files']['error'][$fieldId],
+                    ]);
                 }
             }
         }
 
-        Yii::$app->session->setFlash('success', 'Данные успешно обновлены.');
-        return $this->redirect('profile');
+        $allFieldIds = array_unique(array_merge(array_keys($fieldValues), array_keys($files)));
+
+        foreach ($allFieldIds as $fieldId) {
+            // Пытаемся найти существующую запись
+            $record = Data::find()
+                ->where(['field_id' => $fieldId, 'profile_id' => $profile->id])
+                ->one();
+
+            if (!$record) {
+                // если нет — создаём новую
+                $record = new Data();
+                $record->field_id = $fieldId;
+                $record->profile_id = $profile->id;
+            }
+
+            $file = $files[$fieldId] ?? null;
+            $value = $fieldValues[$fieldId] ?? null;
+
+            if ($file && is_file($file->tempName)) {
+                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->firstname . '_' . $profile->surename);
+                $fileName = uniqid() . '_' . $safeName . '.' . $file->getExtension();
+                $uploadPath = $uploadDir . $fileName;
+
+                if ($file->saveAs($uploadPath)) {
+                    $record->data = 'uploads/' . $fileName;
+                } else {
+                    Yii::$app->session->setFlash('error', "Ошибка загрузки файла поля $fieldId");
+                    return $this->redirect(Yii::$app->request->referrer);
+                }
+            } elseif ($value !== null) {
+                $record->data = $value;
+            } else {
+                continue; // ни файл, ни значение — пропускаем
+            }
+
+            if (!$record->save()) {
+                Yii::error($record->getErrors(), 'form');
+                Yii::$app->session->setFlash('error', "Ошибка при сохранении поля $fieldId");
+                return $this->redirect(Yii::$app->request->referrer);
+            }
+        }
+
+        Yii::$app->session->setFlash('success', 'Данные успешно обновлены');
+        return $this->redirect(Yii::$app->request->referrer);
     }
+
+
+
 
     public function actionViewFormData($form_id)
     {
