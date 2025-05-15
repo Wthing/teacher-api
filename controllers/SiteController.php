@@ -399,11 +399,23 @@ class SiteController extends Controller
         foreach ($dataIds as $id) {
             $fieldData = Data::findOne($id);
             if ($fieldData) {
+                // Если в поле data есть путь к файлу из папки uploads/
+                if ($fieldData->data && strpos($fieldData->data, 'uploads/') === 0) {
+                    $filePath = Yii::getAlias('@webroot/') . $fieldData->data;
+                    if (is_file($filePath)) {
+                        if (!@unlink($filePath)) {
+                            Yii::error("Не удалось удалить файл $filePath", __METHOD__);
+                        }
+                    }
+                }
+
+                // Удаляем запись из базы
                 $fieldData->delete();
             }
         }
 
         return ['success' => true];
     }
+
 
 }
