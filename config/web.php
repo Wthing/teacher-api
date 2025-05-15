@@ -1,5 +1,7 @@
 <?php
 
+use app\assets\AppAsset;
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
 
@@ -69,5 +71,8 @@ if (YII_ENV_DEV) {
         'allowedIPs' => ['127.0.0.1', '::1', '192.168.0.*', '192.168.178.20', '172.18.0.*']
     ];
 }
+
+$container = Yii::$container;
+$container->set(AppAsset::class);
 
 return $config;

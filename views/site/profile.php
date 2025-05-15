@@ -202,16 +202,16 @@ function generateInputByType(typeId, fieldId, value) {
         case 1: // integer
             input = $('<input>').attr('type', 'number').addClass('form-control').attr('name', 'field_values[' + fieldId + ']').val(value);
             break;
-        case 2: // string
+        case 2: 
             input = $('<input>').attr('type', 'text').addClass('form-control').attr('name', 'field_values[' + fieldId + ']').val(value);
             break;
-        case 3: // date
+        case 3: 
             input = $('<input>').attr('type', 'date').addClass('form-control').attr('name', 'field_values[' + fieldId + ']').val(value);
             break;
-        case 4: // url
+        case 4: 
             input = $('<input>').attr('type', 'url').addClass('form-control').attr('name', 'field_values[' + fieldId + ']').val(value);
             break;
-        case 5: // file
+        case 5: 
             input = $('<input>').attr('type', 'file').addClass('form-control').attr('name', 'field_files[' + fieldId + ']');
             if (typeof value === 'string' && value.length > 0) {
                 const fileInfo = $('<p>').html('Загружен файл: <a href="/' + value + '" target="_blank">' + value.split('/').pop() + '</a>');

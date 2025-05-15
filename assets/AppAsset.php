@@ -17,6 +17,8 @@ use yii\web\AssetBundle;
  */
 class AppAsset extends AssetBundle
 {
+    public $uploads = '/uploads/';
+    public $uploadsRoot = '@webroot/uploads/';
     public $basePath = '@webroot';
     public $baseUrl = '@web';
     public $css = [
