@@ -7,6 +7,10 @@ use yii\helpers\Json;
 /** @var Form[] $forms */
 /** @var array $userData */
 
+function isValidUrl($url) {
+    return filter_var($url, FILTER_VALIDATE_URL) !== false;
+}
+
 ?>
 
 <div class="container mt-3">
@@ -60,7 +64,19 @@ use yii\helpers\Json;
                         $rowDisplay[] = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
                     }
                 } else {
-                    $rowDisplay[] = Html::encode(is_array($value) ? implode(', ', $value) : $value);
+                    // Other types - check if value is URL, if yes make clickable
+                    if (is_string($value) && isValidUrl($value)) {
+                        $rowDisplay[] = Html::a(
+                            Html::encode($value),
+                            $value,
+                            ['target' => '_blank', 'rel' => 'noopener noreferrer']
+                        );
+                    } else if (is_array($value)) {
+                        // Implode array values
+                        $rowDisplay[] = Html::encode(implode(', ', $value));
+                    } else {
+                        $rowDisplay[] = Html::encode($value);
+                    }
                 }
 
                 $rowData[$fieldId] = $value;
