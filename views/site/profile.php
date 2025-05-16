@@ -1,14 +1,24 @@
 <?php
 
 use app\models\Form;
+use app\models\FormFieldAutocomplete; // <-- add this to load autocomplete data
 use yii\helpers\Html;
 use yii\helpers\Json;
 
 /** @var Form[] $forms */
 /** @var array $userData */
 
+// Helper for URL validation unchanged
 function isValidUrl($url) {
     return filter_var($url, FILTER_VALIDATE_URL) !== false;
+}
+
+// === AUTOCOMPLETE: Fetch all autocomplete entries grouped by field_id ===
+// We'll prepare an array like: [field_id => [content1, content2, ...]]
+$autocompleteMap = [];
+$allAutocompleteRows = FormFieldAutocomplete::find()->all();
+foreach ($allAutocompleteRows as $entry) {
+    $autocompleteMap[$entry->field_id][] = $entry->content;
 }
 
 ?>
@@ -31,7 +41,6 @@ function isValidUrl($url) {
 
         <h3 class="mt-4"><?= Html::encode($form->form_name) ?></h3>
 
-        <!-- Button to add new record -->
         <div class="col-md-12 text-right mb-3">
             <button class="btn btn-success btn-sm create-field-btn"
                     data-form="<?= $form->id ?>"
@@ -51,7 +60,6 @@ function isValidUrl($url) {
                 $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
 
                 if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                    // Check if file is image by extension
                     $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
                     $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
@@ -60,11 +68,9 @@ function isValidUrl($url) {
                         $imgTag = Html::img($url, ['style' => 'max-height:100px; max-width:150px; margin-right:10px;', 'alt' => basename($value)]);
                         $rowDisplay[] = $imgTag;
                     } else {
-                        // Non-image file - display as link
                         $rowDisplay[] = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
                     }
                 } else {
-                    // Other types - check if value is URL, if yes make clickable
                     if (is_string($value) && isValidUrl($value)) {
                         $rowDisplay[] = Html::a(
                             Html::encode($value),
@@ -72,7 +78,6 @@ function isValidUrl($url) {
                             ['target' => '_blank', 'rel' => 'noopener noreferrer']
                         );
                     } else if (is_array($value)) {
-                        // Implode array values
                         $rowDisplay[] = Html::encode(implode(', ', $value));
                     } else {
                         $rowDisplay[] = Html::encode($value);
@@ -151,11 +156,18 @@ function isValidUrl($url) {
     </div>
 </div>
 
+
 <?php
 $csrfToken = Yii::$app->request->getCsrfToken();
 $csrfParam = Yii::$app->request->csrfParam;
 
+// Pass autocompleteMap to JS as JSON
+$autocompleteJson = Json::encode($autocompleteMap);
+
 $js = <<<JS
+// Parse autocomplete options map from PHP
+var autocompleteOptionsMap = $autocompleteJson;
+
 // Edit button click
 $('.edit-field-btn').on('click', function () {
     var formId = $(this).data('form');
@@ -171,12 +183,32 @@ $('.edit-field-btn').on('click', function () {
 
     formFields.forEach(function(field) {
         var value = fieldValues[field.id] || '';
-        var input = generateInputByType(field.type_id, field.id, value);
 
-        var formGroup = $('<div>').addClass('form-group mb-3');
-        formGroup.append($('<label>').text(field.label));
-        formGroup.append(input);
-        container.append(formGroup);
+        // === AUTOCOMPLETE: Check if field has autocomplete options ===
+        if (autocompleteOptionsMap[field.id] !== undefined && autocompleteOptionsMap[field.id].length > 0) {
+            var select = $('<select>').addClass('form-control').attr('name', 'field_values[' + field.id + ']');
+            // Add empty option for no selection
+            select.append($('<option>').val('').text('--- выберите ---'));
+
+            autocompleteOptionsMap[field.id].forEach(function(opt) {
+                var option = $('<option>').val(opt).text(opt);
+                if (opt === value) option.prop('selected', true);
+                select.append(option);
+            });
+
+            var formGroup = $('<div>').addClass('form-group mb-3');
+            formGroup.append($('<label>').text(field.label));
+            formGroup.append(select);
+            container.append(formGroup);
+
+        } else {
+            // Existing input generation for other types
+            var input = generateInputByType(field.type_id, field.id, value);
+            var formGroup = $('<div>').addClass('form-group mb-3');
+            formGroup.append($('<label>').text(field.label));
+            formGroup.append(input);
+            container.append(formGroup);
+        }
     });
 
     var modal = new bootstrap.Modal(document.getElementById('editFieldModal'));
@@ -194,12 +226,26 @@ $('.create-field-btn').on('click', function () {
     container.empty();
 
     formFields.forEach(function(field) {
-        var input = generateInputByType(field.type_id, field.id, '');
+        // === AUTOCOMPLETE: same check for create form ===
+        if (autocompleteOptionsMap[field.id] !== undefined && autocompleteOptionsMap[field.id].length > 0) {
+            var select = $('<select>').addClass('form-control').attr('name', 'field_values[' + field.id + ']');
+            select.append($('<option>').val('').text('--- выберите ---'));
+            autocompleteOptionsMap[field.id].forEach(function(opt) {
+                select.append($('<option>').val(opt).text(opt));
+            });
 
-        var formGroup = $('<div>').addClass('form-group mb-3');
-        formGroup.append($('<label>').text(field.field_name));
-        formGroup.append(input);
-        container.append(formGroup);
+            var formGroup = $('<div>').addClass('form-group mb-3');
+            formGroup.append($('<label>').text(field.field_name));
+            formGroup.append(select);
+            container.append(formGroup);
+
+        } else {
+            var input = generateInputByType(field.type_id, field.id, '');
+            var formGroup = $('<div>').addClass('form-group mb-3');
+            formGroup.append($('<label>').text(field.field_name));
+            formGroup.append(input);
+            container.append(formGroup);
+        }
     });
 
     var modal = new bootstrap.Modal(document.getElementById('createFieldModal'));
