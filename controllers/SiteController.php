@@ -282,6 +282,7 @@ class SiteController extends Controller
 
         $formId = $request->post('form_id');
         $fieldValues = $request->post('field_values', []);
+        $recordIds = $request->post('record_ids', []); // <<<<< добавлено
 
         if (empty($formId) || (empty($fieldValues) && empty($_FILES['field_files']['name']))) {
             Yii::$app->session->setFlash('error', 'Форма или данные пустые');
@@ -311,13 +312,19 @@ class SiteController extends Controller
         $allFieldIds = array_unique(array_merge(array_keys($fieldValues), array_keys($files)));
 
         foreach ($allFieldIds as $fieldId) {
-            // Пытаемся найти существующую запись
-            $record = Data::find()
-                ->where(['field_id' => $fieldId, 'profile_id' => $profile->id])
-                ->one();
+            // ищем по ID записи, если есть
+            $recordId = $recordIds[$fieldId] ?? null;
+
+            if ($recordId) {
+                $record = Data::findOne(['id' => $recordId, 'profile_id' => $profile->id]);
+            } else {
+                // если ID нет — ищем по старому способу (первая)
+                $record = Data::find()
+                    ->where(['field_id' => $fieldId, 'profile_id' => $profile->id])
+                    ->one();
+            }
 
             if (!$record) {
-                // если нет — создаём новую
                 $record = new Data();
                 $record->field_id = $fieldId;
                 $record->profile_id = $profile->id;
@@ -327,7 +334,6 @@ class SiteController extends Controller
             $value = $fieldValues[$fieldId] ?? null;
 
             if ($file && is_file($file->tempName)) {
-                // Удаляем старый файл, если он есть и отличается от нового
                 if ($record->data && strpos($record->data, 'uploads/') === 0) {
                     $oldFilePath = Yii::getAlias('@webroot/') . $record->data;
                     if (is_file($oldFilePath)) {
@@ -346,7 +352,6 @@ class SiteController extends Controller
                     return $this->redirect(Yii::$app->request->referrer);
                 }
             } elseif ($value !== null) {
-                // Если меняется значение, и был файл, удаляем файл
                 if ($record->data && strpos($record->data, 'uploads/') === 0) {
                     $oldFilePath = Yii::getAlias('@webroot/') . $record->data;
                     if (is_file($oldFilePath)) {
@@ -355,7 +360,6 @@ class SiteController extends Controller
                 }
                 $record->data = $value;
             } else {
-                // ни файл, ни значение — пропускаем
                 continue;
             }
 
@@ -369,6 +373,8 @@ class SiteController extends Controller
         Yii::$app->session->setFlash('success', 'Данные успешно обновлены');
         return $this->redirect(Yii::$app->request->referrer);
     }
+
+
 
 
 

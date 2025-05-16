@@ -20,7 +20,6 @@ $allAutocompleteRows = FormFieldAutocomplete::find()->all();
 foreach ($allAutocompleteRows as $entry) {
     $autocompleteMap[$entry->field_id][] = $entry->content;
 }
-
 ?>
 
 <div class="container mt-3">
@@ -123,9 +122,14 @@ foreach ($allAutocompleteRows as $entry) {
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="modalFieldsContainer"></div>
+
                 <input type="hidden" name="form_id" id="modalFormId">
-                <input type="hidden" name="data_ids" id="modalDataIds">
+
+                <!-- Here we will dynamically add hidden inputs for record_ids -->
+                <div id="modalRecordIdsContainer"></div>
+
                 <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
+
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Сохранить</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
@@ -171,38 +175,51 @@ var autocompleteOptionsMap = $autocompleteJson;
 // Edit button click
 $('.edit-field-btn').on('click', function () {
     var formId = $(this).data('form');
-    var recordIds = $(this).data('ids');
-    var fieldValues = $(this).data('values');
-    var formFields = $(this).data('fields');
+    var recordIds = $(this).data('ids'); // array of record ids, e.g. [456, 457]
+    var fieldValues = $(this).data('values'); // field values keyed by field id
+    var formFields = $(this).data('fields'); // array of form field objects
 
     $('#modalFormId').val(formId);
-    $('#modalDataIds').val(JSON.stringify(recordIds));
 
     var container = $('#modalFieldsContainer');
-    container.empty();
+    var recordIdsContainer = $('#modalRecordIdsContainer');
 
+    container.empty();
+    recordIdsContainer.empty();
+
+    // Add hidden inputs for each record id, keyed by the field id
+    // If you want to send the record id per field id, assuming formFields[i].id corresponds to recordIds[i]
+    for (let i = 0; i < formFields.length; i++) {
+        let fieldId = formFields[i].id;
+        let recordId = recordIds[i] || ''; // in case recordIds missing, empty string
+
+        // Add hidden input: record_ids[fieldId] = recordId
+        // e.g. <input type="hidden" name="record_ids[123]" value="456">
+        var hiddenInput = $('<input>')
+            .attr('type', 'hidden')
+            .attr('name', 'record_ids[' + fieldId + ']')
+            .val(recordId);
+
+        recordIdsContainer.append(hiddenInput);
+    }
+
+    // Generate the fields for editing
     formFields.forEach(function(field) {
         var value = fieldValues[field.id] || '';
 
-        // === AUTOCOMPLETE: Check if field has autocomplete options ===
         if (autocompleteOptionsMap[field.id] !== undefined && autocompleteOptionsMap[field.id].length > 0) {
             var select = $('<select>').addClass('form-control').attr('name', 'field_values[' + field.id + ']');
-            // Add empty option for no selection
             select.append($('<option>').val('').text('--- выберите ---'));
-
             autocompleteOptionsMap[field.id].forEach(function(opt) {
                 var option = $('<option>').val(opt).text(opt);
                 if (opt === value) option.prop('selected', true);
                 select.append(option);
             });
-
             var formGroup = $('<div>').addClass('form-group mb-3');
             formGroup.append($('<label>').text(field.label));
             formGroup.append(select);
             container.append(formGroup);
-
         } else {
-            // Existing input generation for other types
             var input = generateInputByType(field.type_id, field.id, value);
             var formGroup = $('<div>').addClass('form-group mb-3');
             formGroup.append($('<label>').text(field.label));
