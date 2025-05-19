@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "forms".
@@ -13,7 +14,7 @@ use Yii;
  * @property Data[] $datas
  * @property FormField[] $formFields
  */
-class Form extends \yii\db\ActiveRecord
+class Form extends ActiveRecord
 {
 
 

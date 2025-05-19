@@ -1,20 +1,17 @@
 <?php
 
 use app\models\Form;
-use app\models\FormFieldAutocomplete; // <-- add this to load autocomplete data
+use app\models\FormFieldAutocomplete;
 use yii\helpers\Html;
 use yii\helpers\Json;
 
 /** @var Form[] $forms */
 /** @var array $userData */
 
-// Helper for URL validation unchanged
 function isValidUrl($url) {
     return filter_var($url, FILTER_VALIDATE_URL) !== false;
 }
 
-// === AUTOCOMPLETE: Fetch all autocomplete entries grouped by field_id ===
-// We'll prepare an array like: [field_id => [content1, content2, ...]]
 $autocompleteMap = [];
 $allAutocompleteRows = FormFieldAutocomplete::find()->all();
 foreach ($allAutocompleteRows as $entry) {
@@ -90,8 +87,8 @@ foreach ($allAutocompleteRows as $entry) {
             }
             ?>
 
-            <div class="row mb-2 align-items-center">
-                <div class="col-md-10">
+            <div class="row mb-2 align-items-center" style="white-space: nowrap; overflow-x: auto;">
+                <div class="col-md-10 text-truncate data-row" style="white-space: nowrap; overflow-x: auto; display: flex; align-items: center; gap: 10px;">
                     <?= implode(' - ', $rowDisplay) ?>
                 </div>
                 <div class="col-md-2 text-end">
@@ -165,19 +162,16 @@ foreach ($allAutocompleteRows as $entry) {
 $csrfToken = Yii::$app->request->getCsrfToken();
 $csrfParam = Yii::$app->request->csrfParam;
 
-// Pass autocompleteMap to JS as JSON
 $autocompleteJson = Json::encode($autocompleteMap);
 
 $js = <<<JS
-// Parse autocomplete options map from PHP
 var autocompleteOptionsMap = $autocompleteJson;
 
-// Edit button click
 $('.edit-field-btn').on('click', function () {
     var formId = $(this).data('form');
-    var recordIds = $(this).data('ids'); // array of record ids, e.g. [456, 457]
-    var fieldValues = $(this).data('values'); // field values keyed by field id
-    var formFields = $(this).data('fields'); // array of form field objects
+    var recordIds = $(this).data('ids'); 
+    var fieldValues = $(this).data('values'); 
+    var formFields = $(this).data('fields'); 
 
     $('#modalFormId').val(formId);
 
@@ -187,14 +181,11 @@ $('.edit-field-btn').on('click', function () {
     container.empty();
     recordIdsContainer.empty();
 
-    // Add hidden inputs for each record id, keyed by the field id
-    // If you want to send the record id per field id, assuming formFields[i].id corresponds to recordIds[i]
+    
     for (let i = 0; i < formFields.length; i++) {
         let fieldId = formFields[i].id;
-        let recordId = recordIds[i] || ''; // in case recordIds missing, empty string
+        let recordId = recordIds[i] || '';
 
-        // Add hidden input: record_ids[fieldId] = recordId
-        // e.g. <input type="hidden" name="record_ids[123]" value="456">
         var hiddenInput = $('<input>')
             .attr('type', 'hidden')
             .attr('name', 'record_ids[' + fieldId + ']')
@@ -203,13 +194,12 @@ $('.edit-field-btn').on('click', function () {
         recordIdsContainer.append(hiddenInput);
     }
 
-    // Generate the fields for editing
     formFields.forEach(function(field) {
         var value = fieldValues[field.id] || '';
 
         if (autocompleteOptionsMap[field.id] !== undefined && autocompleteOptionsMap[field.id].length > 0) {
             var select = $('<select>').addClass('form-control').attr('name', 'field_values[' + field.id + ']');
-            select.append($('<option>').val('').text('--- выберите ---'));
+            select.append($('<option>').val('').text('->'));
             autocompleteOptionsMap[field.id].forEach(function(opt) {
                 var option = $('<option>').val(opt).text(opt);
                 if (opt === value) option.prop('selected', true);
@@ -232,7 +222,6 @@ $('.edit-field-btn').on('click', function () {
     modal.show();
 });
 
-// Create button click
 $('.create-field-btn').on('click', function () {
     var formId = $(this).data('form');
     var formFields = $(this).data('fields');
@@ -243,10 +232,9 @@ $('.create-field-btn').on('click', function () {
     container.empty();
 
     formFields.forEach(function(field) {
-        // === AUTOCOMPLETE: same check for create form ===
         if (autocompleteOptionsMap[field.id] !== undefined && autocompleteOptionsMap[field.id].length > 0) {
             var select = $('<select>').addClass('form-control').attr('name', 'field_values[' + field.id + ']');
-            select.append($('<option>').val('').text('--- выберите ---'));
+            select.append($('<option>').val('').text('->'));
             autocompleteOptionsMap[field.id].forEach(function(opt) {
                 select.append($('<option>').val(opt).text(opt));
             });
@@ -269,7 +257,6 @@ $('.create-field-btn').on('click', function () {
     modal.show();
 });
 
-// Delete button click
 $('.delete-field-btn').on('click', function () {
     if (!confirm('Вы уверены, что хотите удалить эту запись?')) return;
 
@@ -291,7 +278,6 @@ $('.delete-field-btn').on('click', function () {
     });
 });
 
-// Generate input field by type with file input handling
 function generateInputByType(typeId, fieldId, value) {
     let input;
 

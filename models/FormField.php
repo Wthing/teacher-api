@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "form_fields".
@@ -17,7 +18,7 @@ use Yii;
  * @property FormFieldType $formFieldsType
  * @property Form $forms
  */
-class FormField extends \yii\db\ActiveRecord
+class FormField extends ActiveRecord
 {
 
 
@@ -92,6 +93,7 @@ class FormField extends \yii\db\ActiveRecord
     {
         return $this->hasOne(FormFieldType::class, ['id' => 'type_id']);
     }
+
 
     public function getAutocompleteOptions()
     {

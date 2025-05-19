@@ -2,33 +2,22 @@
 
 namespace app\controllers;
 
-use app\assets\AppAsset;
+use app\models\ContactForm;
 use app\models\Data;
 use app\models\Form;
 use app\models\FormField;
+use app\models\LoginForm;
 use app\models\Profile;
 use Yii;
 use yii\filters\AccessControl;
-use yii\helpers\Json;
-use yii\helpers\Url;
+use yii\filters\VerbFilter;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
-use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
 use yii\web\UploadedFile;
 
 class SiteController extends Controller
 {
-
-//    private AppAsset $asset;
-//
-//    public function __construct(AppAsset $asset)
-//    {
-//        $this->asset = $asset;
-//    }
-
     /**
      * {@inheritdoc}
      */
@@ -145,36 +134,28 @@ class SiteController extends Controller
 
     public function actionProfile()
     {
-        // Получаем текущий ID пользователя
         $profileId = Yii::$app->user->id;
 
-        // Загружаем формы и поля
         $forms = Form::find()->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 
-        // Изменяем запрос, чтобы получать данные для текущего пользователя
         $rawData = Data::find()
-            ->where(['profile_id' => 1]) // Используем ID текущего пользователя
+            ->where(['profile_id' => 1])
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
 
-        // Логируем ID полученных данных
         Yii::info('Raw Data IDs: ' . implode(',', array_map(fn($d) => $d->id, $rawData)), 'profile');
 
-        // Группируем данные по field_id, добавляем ID и data
         $groupedData = [];
         foreach ($rawData as $data) {
-            // Группируем данные по field_id
             $groupedData[$data->field_id][] = [
-                'id' => $data->id,      // Сохраняем ID записи
-                'data' => $data->data,  // Сохраняем данные
+                'id' => $data->id,
+                'data' => $data->data,
             ];
         }
 
-        // Логируем сгруппированные данные
         Yii::info('Grouped Data: ' . json_encode($groupedData), 'profile');
 
-        // Передаем данные в представление
         return $this->render('profile', [
             'forms' => $forms,
             'fields' => $formFields,
@@ -189,7 +170,6 @@ class SiteController extends Controller
 
     public function actionGetFormFields($form_id)
     {
-        // Получаем поля формы по ID
         $formFields = FormField::find()->where(['form_id' => $form_id])->all();
         return $this->asJson($formFields);
     }
@@ -257,7 +237,7 @@ class SiteController extends Controller
             } elseif ($value !== null) {
                 $record->data = $value;
             } else {
-                continue; // поле пустое и файл не загружен — пропускаем
+                continue;
             }
 
             if (!$record->save()) {
@@ -312,13 +292,11 @@ class SiteController extends Controller
         $allFieldIds = array_unique(array_merge(array_keys($fieldValues), array_keys($files)));
 
         foreach ($allFieldIds as $fieldId) {
-            // ищем по ID записи, если есть
             $recordId = $recordIds[$fieldId] ?? null;
 
             if ($recordId) {
                 $record = Data::findOne(['id' => $recordId, 'profile_id' => $profile->id]);
             } else {
-                // если ID нет — ищем по старому способу (первая)
                 $record = Data::find()
                     ->where(['field_id' => $fieldId, 'profile_id' => $profile->id])
                     ->one();
@@ -374,12 +352,6 @@ class SiteController extends Controller
         return $this->redirect(Yii::$app->request->referrer);
     }
 
-
-
-
-
-
-
     public function actionViewFormData($form_id)
     {
         $userData = Data::find()
@@ -415,7 +387,6 @@ class SiteController extends Controller
                     }
                 }
 
-                // Удаляем запись из базы
                 $fieldData->delete();
             }
         }
