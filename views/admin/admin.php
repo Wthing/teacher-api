@@ -1,10 +1,18 @@
+
 <?php
+
 use yii\helpers\Html;
 use yii\bootstrap5\Modal;
 use yii\helpers\Url;
 
+/** @var yii\web\View $this */
+
+$this->title = 'Конструктор форм';
+$this->registerCsrfMetaTags();
+
 $fieldTypes = \app\models\FormFieldType::find()->all();
 $forms = \app\models\Form::find()->all();
+
 
 $optionsHtml = '';
 foreach ($fieldTypes as $fieldType) {
@@ -14,6 +22,7 @@ foreach ($fieldTypes as $fieldType) {
 
 <div class="container mt-4">
     <h1 class="mb-4">Конструктор форм</h1>
+
 
     <div class="mb-4">
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#formModalStep1">
@@ -27,11 +36,8 @@ foreach ($fieldTypes as $fieldType) {
                 <div class="card mb-4">
                     <div class="card-body">
                         <h5 class="card-title"><?= Html::encode($form->form_name) ?></h5>
-                        <button type="button" class="btn btn-primary toggle-form-btn" data-bs-toggle="modal" data-bs-target="#viewFormModal" data-form="<?= $form->id ?>">
+                        <button type="button" class="btn btn-primary toggle-form-btn" data-bs-toggle="modal" data-bs-target="#exampleModal" data-form="<?= $form->id ?>">
                             Открыть
-                        </button>
-                        <button type="button" class="btn btn-warning edit-form-btn" data-bs-toggle="modal" data-bs-target="#editFormModal" data-form="<?= $form->id ?>">
-                            Редактировать
                         </button>
                         <button type="button"
                                 class="btn btn-danger btn-sm delete-form-btn"
@@ -44,134 +50,115 @@ foreach ($fieldTypes as $fieldType) {
             </div>
         <?php endforeach; ?>
     </div>
+
 </div>
 
-<!-- Модал для просмотра формы -->
+<?php
+echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']);
+?>
+
 <?php Modal::begin([
-    'id' => 'viewFormModal',
-    'title' => 'Детали формы',
+    'id' => 'formModalStep1',
+    'title' => 'Создание формы — шаг 1',
 ]); ?>
-<div class="modal-body">Загрузка...</div>
+
+<div>
+    <div class="mb-3">
+        <?= Html::label('Название формы', 'form-name', ['class' => 'form-label']) ?>
+        <?= Html::textInput('Form[form_name]', '', [
+            'class' => 'form-control',
+            'required' => true,
+            'id' => 'form-name',
+            'placeholder' => 'Например: Обратная связь'
+        ]) ?>
+    </div>
+    <div class="text-end">
+        <button type="button"
+                class="btn btn-primary"
+                data-bs-target="#formModalStep2"
+                data-bs-toggle="modal"
+                data-bs-dismiss="modal">Далее</button>
+    </div>
+</div>
+
 <?php Modal::end(); ?>
 
-<!-- Модал для редактирования формы -->
 <?php Modal::begin([
-    'id' => 'editFormModal',
-    'title' => 'Редактирование формы',
+    'id' => 'formModalStep2',
+    'title' => 'Создание формы — шаг 2',
 ]); ?>
-<form id="editForm" method="post" action="<?= Url::to(['admin/update-form']) ?>">
-    <input type="hidden" name="_csrf" value="<?= Yii::$app->request->csrfToken ?>">
-    <input type="hidden" name="Form[id]" id="editFormId">
 
-    <div class="mb-3">
-        <label for="editFormName" class="form-label">Название формы</label>
-        <input type="text" name="Form[form_name]" class="form-control" id="editFormName" required>
+<div id="fieldContainer">
+    <div id="fieldInputs" class="mb-3">
+        <!-- Динамически добавляемые поля -->
     </div>
 
-    <div id="editFieldInputs" class="mb-3">
-    </div>
 
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="editAddField">+ Добавить поле</button>
+    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addField">
+        + Добавить поле
+    </button>
 
     <div class="text-end">
-        <button type="submit" class="btn btn-success">Сохранить изменения</button>
+        <button type="submit" class="btn btn-success">Сохранить форму</button>
     </div>
-</form>
+
+
+</div>
+
 <?php Modal::end(); ?>
 
+<!-- Modal -->
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ...
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
-$js = <<<JS
+// Закрываем форму ПОСЛЕ всех модалок
+echo Html::endForm();
+
+$addFieldJs = <<<JS
+let fieldIndex = 0;
 const optionsHtml = `$optionsHtml`;
 
-let editFieldIndex = 0;
-
-document.getElementById('editAddField').addEventListener('click', () => {
-    const container = document.getElementById('editFieldInputs');
+document.getElementById('addField').addEventListener('click', () => {
+    const container = document.getElementById('fieldInputs');
     const wrapper = document.createElement('div');
     wrapper.classList.add('mb-2');
     wrapper.innerHTML = `
-        <input type="text" name="fields[\${editFieldIndex}][field_name]" class="form-control mb-1" placeholder="Название поля" required>
-        <select name="fields[\${editFieldIndex}][type_id]" class="form-control mb-1" required>
+        <input type="text" name="fields[\${fieldIndex}][field_name]" class="form-control mb-1" placeholder="Название поля" required>
+        <select name="fields[\${fieldIndex}][type_id]" class="form-control mb-1" required>
             \${optionsHtml}
         </select>
-        <button type="button" class="btn btn-sm btn-danger remove-field-btn">Удалить поле</button>
-        <hr>
     `;
     container.appendChild(wrapper);
-    editFieldIndex++;
-});
-
-document.getElementById('editFieldInputs').addEventListener('click', (e) => {
-    if(e.target.classList.contains('remove-field-btn')){
-        e.target.parentElement.remove();
-    }
-});
-
-$('.edit-form-btn').on('click', function () {
-    const formId = $(this).data('form');
-    editFieldIndex = 0;
-    const modal = $('#editFormModal');
-    const form = modal.find('#editForm')[0];
-
-    form.reset();
-    document.getElementById('editFieldInputs').innerHTML = '';
-
-    $('#editFormId').val(formId);
-
-    $.ajax({
-        url: '/admin/fetch-form-with-fields',
-        method: 'GET',
-        data: { id: formId },
-        success: function (response) {
-            if (!response.success) {
-                alert('Ошибка загрузки данных: ' + response.error);
-                modal.modal('hide');
-                return;
-            }
-
-            $('#editFormName').val(response.form.form_name);
-
-            if (response.fields.length === 0) {
-                return;
-            }
-
-            response.fields.forEach(field => {
-                const wrapper = document.createElement('div');
-                wrapper.classList.add('mb-2');
-                wrapper.innerHTML = `
-                    <input type="hidden" name="fields[\${editFieldIndex}][id]" value="\${field.id}">
-                    <input type="text" name="fields[\${editFieldIndex}][field_name]" class="form-control mb-1" placeholder="Название поля" required value="\${field.field_name}">
-                    <select name="fields[\${editFieldIndex}][type_id]" class="form-control mb-1" required>
-                        \${optionsHtml}
-                    </select>
-                    <button type="button" class="btn btn-sm btn-danger remove-field-btn">Удалить поле</button>
-                    <hr>
-                `;
-                container.appendChild(wrapper);
-
-                // Устанавливаем выбранный тип поля
-                $(wrapper).find('select').val(field.type_id);
-
-                editFieldIndex++;
-            });
-        },
-        error: function () {
-            alert('Произошла ошибка при загрузке данных формы.');
-            modal.modal('hide');
-        }
-    });
+    fieldIndex++;
 });
 
 $('.toggle-form-btn').on('click', function () {
     const formId = $(this).data('form');
-    const modal = $('#viewFormModal');
+    const modal = $('#exampleModal');
     const modalBody = modal.find('.modal-body');
     const modalTitle = modal.find('.modal-title');
 
     modalBody.html('<p>Загрузка...</p>');
 
     $.ajax({
-        url: '/admin/fetch-fields-by-form-id',
+        url: '/admin/fetch-fields-by-form-id', // путь может отличаться!
         method: 'GET',
         data: { id: formId },
         success: function (response) {
@@ -196,6 +183,8 @@ $('.toggle-form-btn').on('click', function () {
             });
             html += '</ul>';
 
+
+
             modalBody.html(html);
         },
         error: function () {
@@ -204,7 +193,6 @@ $('.toggle-form-btn').on('click', function () {
     });
 });
 
-// Удаление формы (как у тебя было)
 $('.delete-form-btn').on('click', function () {
     const formId = $(this).data('form-id');
     const card = $(this).closest('.col-md-4');
@@ -234,7 +222,8 @@ $('.delete-form-btn').on('click', function () {
         }
     });
 });
+
 JS;
 
-$this->registerJs($js);
+$this->registerJs($addFieldJs);
 ?>
