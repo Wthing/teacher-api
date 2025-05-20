@@ -11,7 +11,7 @@ use yii\web\Response;
 
 class AdminController extends Controller
 {
-    public function actionAdmin()
+    public function actionIndex()
     {
         $fields = FormField::find()->all();
 
@@ -48,7 +48,7 @@ class AdminController extends Controller
 
                 $transaction->commit();
 
-                return $this->redirect(['admin/admin']);
+                return $this->redirect(['index']);
             } catch (\Exception $e) {
                 $transaction->rollBack();
                 Yii::$app->session->setFlash('error', 'Ошибка при сохранении: ' . $e->getMessage());

@@ -136,7 +136,7 @@ class SiteController extends Controller
     {
         $profileId = Yii::$app->user->id;
 
-        $forms = Form::find()->all();
+        $forms = Form::find()->where(['status' => true])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 
         $rawData = Data::find()
