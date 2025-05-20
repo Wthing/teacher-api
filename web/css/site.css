@@ -109,3 +109,10 @@ a.desc:after {
     text-overflow: ellipsis;
     max-width: 200px;
 }
+
+.disabled-card {
+    pointer-events: none;
+    filter: grayscale(100%);
+    opacity: 0.5;
+    transition: 0.3s ease;
+}

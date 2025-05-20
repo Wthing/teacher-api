@@ -63,7 +63,7 @@ class AdminController extends Controller
 
     public function actionFetchFieldsByFormId($id)
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
         $form = Form::findOne($id);
         if (!$form) {
@@ -86,21 +86,48 @@ class AdminController extends Controller
 
     public function actionDeleteForm()
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
         $id = Yii::$app->request->post('id');
 
-        $form = \app\models\Form::findOne($id);
+        $form = Form::findOne($id);
         if (!$form) {
             return ['success' => false, 'error' => 'Форма не найдена'];
         }
 
         try {
-            $form->delete();
-            return ['success' => true];
+            $form->status = false;
+            if ($form->save()) {
+                return ['success' => true];
+            } else {
+                return ['success' => false, 'error' => 'Не удалось сохранить изменения.'];
+            }
         } catch (\Throwable $e) {
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
+
+    public function actionRestoreForm()
+    {
+        Yii::$app->response->format = Response::FORMAT_JSON;
+
+        $id = Yii::$app->request->post('id');
+        $form = Form::findOne($id);
+
+        if (!$form) {
+            return ['success' => false, 'error' => 'Форма не найдена.'];
+        }
+
+        $form->status = true;
+
+        if ($form->save()) {
+            return ['success' => true];
+        }
+
+        return ['success' => false, 'error' => 'Не удалось сохранить изменения.'];
+    }
+
+
+
 
 }

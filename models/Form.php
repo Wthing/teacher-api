@@ -10,6 +10,7 @@ use yii\db\ActiveRecord;
  *
  * @property int $id
  * @property string $form_name
+ * @property boolean $status
  *
  * @property Data[] $datas
  * @property FormField[] $formFields
@@ -34,6 +35,7 @@ class Form extends ActiveRecord
         return [
             [['form_name'], 'required'],
             [['form_name'], 'string', 'max' => 255],
+            [['status'], 'boolean'],
         ];
     }
 
@@ -45,6 +47,7 @@ class Form extends ActiveRecord
         return [
             'id' => Yii::t('app', 'ID'),
             'form_name' => Yii::t('app', 'Form Name'),
+            'status' => Yii::t('app', 'Status'),
         ];
     }
 

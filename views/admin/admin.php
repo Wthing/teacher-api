@@ -1,8 +1,9 @@
-
 <?php
 
-use yii\helpers\Html;
+use app\models\Form;
+use app\models\FormFieldType;
 use yii\bootstrap5\Modal;
+use yii\helpers\Html;
 use yii\helpers\Url;
 
 /** @var yii\web\View $this */
@@ -10,9 +11,18 @@ use yii\helpers\Url;
 $this->title = 'Конструктор форм';
 $this->registerCsrfMetaTags();
 
-$fieldTypes = \app\models\FormFieldType::find()->all();
-$forms = \app\models\Form::find()->all();
+$fieldTypes = FormFieldType::find()->all();
 
+// Обработка фильтра
+$statusFilter = Yii::$app->request->get('statusFilter', 'active');
+$query = Form::find();
+
+if ($statusFilter === 'active') {
+    $query->where(['status' => true]);
+} elseif ($statusFilter === 'disabled') {
+    $query->where(['status' => false]);
+}
+$forms = $query->all();
 
 $optionsHtml = '';
 foreach ($fieldTypes as $fieldType) {
@@ -23,39 +33,63 @@ foreach ($fieldTypes as $fieldType) {
 <div class="container mt-4">
     <h1 class="mb-4">Конструктор форм</h1>
 
-
     <div class="mb-4">
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#formModalStep1">
             + Создать новую форму
         </button>
     </div>
 
+    <div class="mb-4">
+        <form method="get">
+            <label for="statusFilter" class="form-label">Фильтр по статусу:</label>
+            <select id="statusFilter" name="statusFilter" class="form-select" onchange="this.form.submit()">
+                <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>Все формы</option>
+                <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Только активные</option>
+                <option value="disabled" <?= $statusFilter === 'disabled' ? 'selected' : '' ?>>Только отключённые</option>
+            </select>
+        </form>
+    </div>
+
     <div class="row">
         <?php foreach ($forms as $form): ?>
             <div class="col-md-4">
-                <div class="card mb-4">
+                <div class="card mb-4 <?= !$form->status ? 'disabled-card' : '' ?>" style="<?= !$form->status ? 'opacity: 0.5;' : '' ?>">
                     <div class="card-body">
-                        <h5 class="card-title"><?= Html::encode($form->form_name) ?></h5>
-                        <button type="button" class="btn btn-primary toggle-form-btn" data-bs-toggle="modal" data-bs-target="#exampleModal" data-form="<?= $form->id ?>">
+                        <h5 class="card-title">
+                            <?= Html::encode($form->form_name) ?>
+                            <?php if (!$form->status): ?>
+                                <span class="badge bg-secondary">Отключена</span>
+                            <?php endif; ?>
+                        </h5>
+
+                        <button type="button" class="btn btn-primary toggle-form-btn"
+                                data-bs-toggle="modal" data-bs-target="#exampleModal"
+                                data-form="<?= $form->id ?>" <?= !$form->status ? 'disabled' : '' ?>>
                             Открыть
                         </button>
-                        <button type="button"
-                                class="btn btn-danger btn-sm delete-form-btn"
-                                data-form-id="<?= $form->id ?>">
-                            Удалить
-                        </button>
 
+                        <?php if ($form->status): ?>
+                            <button type="button"
+                                    class="btn btn-danger btn-sm delete-form-btn"
+                                    data-form-id="<?= $form->id ?>">
+                                Отключить
+                            </button>
+                        <?php else: ?>
+                            <button type="button"
+                                    class="btn btn-success btn-sm restore-form-btn"
+                                    data-form-id="<?= $form->id ?>">
+                                Восстановить
+                            </button>
+                        <?php endif; ?>
                     </div>
+
                 </div>
             </div>
         <?php endforeach; ?>
     </div>
-
 </div>
 
-<?php
-echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']);
-?>
+<?php echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']); ?>
 
 <?php Modal::begin([
     'id' => 'formModalStep1',
@@ -89,10 +123,7 @@ echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']);
 ]); ?>
 
 <div id="fieldContainer">
-    <div id="fieldInputs" class="mb-3">
-        <!-- Динамически добавляемые поля -->
-    </div>
-
+    <div id="fieldInputs" class="mb-3"></div>
 
     <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addField">
         + Добавить поле
@@ -101,14 +132,11 @@ echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']);
     <div class="text-end">
         <button type="submit" class="btn btn-success">Сохранить форму</button>
     </div>
-
-
 </div>
 
 <?php Modal::end(); ?>
 
-<!-- Modal -->
-
+<!-- Modal для просмотра формы -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -116,21 +144,17 @@ echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']);
                 <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                ...
-            </div>
+            <div class="modal-body">...</div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
             </div>
         </div>
     </div>
 </div>
 
-<?php
-// Закрываем форму ПОСЛЕ всех модалок
-echo Html::endForm();
+<?php echo Html::endForm(); ?>
 
+<?php
 $addFieldJs = <<<JS
 let fieldIndex = 0;
 const optionsHtml = `$optionsHtml`;
@@ -158,7 +182,7 @@ $('.toggle-form-btn').on('click', function () {
     modalBody.html('<p>Загрузка...</p>');
 
     $.ajax({
-        url: '/admin/fetch-fields-by-form-id', // путь может отличаться!
+        url: '/admin/fetch-fields-by-form-id',
         method: 'GET',
         data: { id: formId },
         success: function (response) {
@@ -174,7 +198,7 @@ $('.toggle-form-btn').on('click', function () {
                 return;
             }
 
-           let html = '<ul class="list-group">';
+            let html = '<ul class="list-group">';
             response.fields.forEach(function (field) {
                 html += `<li class="list-group-item d-flex justify-content-between align-items-center">
                     <span>\${field.field_name}</span>
@@ -182,8 +206,6 @@ $('.toggle-form-btn').on('click', function () {
                 </li>`;
             });
             html += '</ul>';
-
-
 
             modalBody.html(html);
         },
@@ -197,7 +219,7 @@ $('.delete-form-btn').on('click', function () {
     const formId = $(this).data('form-id');
     const card = $(this).closest('.col-md-4');
 
-    if (!confirm('Вы уверены, что хотите удалить эту форму?')) {
+    if (!confirm('Вы уверены, что хотите отключить эту форму?')) {
         return;
     }
 
@@ -210,15 +232,44 @@ $('.delete-form-btn').on('click', function () {
         },
         success: function (response) {
             if (response.success) {
-                card.fadeOut(300, function () {
-                    $(this).remove();
-                });
+                card.addClass('disabled-card');
+                card.find('.card-title').append(' <span class="badge bg-secondary">Отключена</span>');
+                card.css('opacity', '0.5');
+                card.find('button, a, input, select, textarea').prop('disabled', true);
             } else {
-                alert('Ошибка при удалении: ' + response.error);
+                alert('Ошибка при отключении: ' + response.error);
             }
         },
         error: function () {
             alert('Серверная ошибка при удалении формы.');
+        }
+    });
+});
+
+$('.restore-form-btn').on('click', function () {
+    const formId = $(this).data('form-id');
+    const card = $(this).closest('.col-md-4');
+
+    if (!confirm('Вы уверены, что хотите восстановить эту форму?')) {
+        return;
+    }
+
+    $.ajax({
+        url: '/admin/restore-form',
+        type: 'POST',
+        data: {
+            id: formId,
+            _csrf: yii.getCsrfToken()
+        },
+        success: function (response) {
+            if (response.success) {
+                location.reload(); // просто перезагружаем страницу
+            } else {
+                alert('Ошибка: ' + response.error);
+            }
+        },
+        error: function () {
+            alert('Произошла ошибка при восстановлении.');
         }
     });
 });
