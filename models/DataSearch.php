@@ -6,8 +6,8 @@ use yii\data\ActiveDataProvider;
 
 class DataSearch extends Data
 {
-    public $field_name; // имя поля формы
-    public $value;      // значение, которое ищем
+    public $field_name;
+    public $value;
 
     public function rules()
     {
@@ -30,7 +30,6 @@ class DataSearch extends Data
             return $dataProvider;
         }
 
-        // Фильтруем по имени поля формы (form_fields.field_name)
         if (!empty($this->field_name)) {
             $query->andWhere(['form_fields.field_name' => $this->field_name]);
         }

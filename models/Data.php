@@ -4,6 +4,7 @@ namespace app\models;
 
 use Yii;
 use yii\db\ActiveQuery;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "data".
@@ -16,7 +17,7 @@ use yii\db\ActiveQuery;
  * @property Form $forms
  * @property Profile $profiles
  */
-class Data extends \yii\db\ActiveRecord
+class Data extends ActiveRecord
 {
 
 
@@ -80,11 +81,18 @@ class Data extends \yii\db\ActiveRecord
         return $this->hasOne(FormField::class, ['id' => 'field_id']);
     }
 
-    // Связь с моделью Profile
     public function getProfile()
     {
         return $this->hasOne(Profile::class, ['id' => 'profile_id']);
     }
+
+    public function getFullName()
+    {
+        return $this->profile
+            ? $this->profile->surename . ' ' . $this->profile->firstname . ' ' . $this->profile->patronimyc
+            : null;
+    }
+
 
 
 }
