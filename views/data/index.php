@@ -10,13 +10,7 @@ use app\models\FormField;
 /** @var DataSearch $searchModel */
 /** @var ActiveDataProvider $dataProvider */
 
-$formFields = FormField::find()
-    ->joinWith('forms') // assuming relation getForm() exists
-    ->where(['forms.status' => true])
-    ->select(['form_fields.field_name', 'form_fields.id']) // field_name as label, id as key
-    ->indexBy('id') // use ID to ensure uniqueness
-    ->column();
-
+$formFields = FormField::find()->select(['field_name'])->indexBy('field_name')->column();
 ?>
 
 <div class="data-search">
@@ -26,7 +20,7 @@ $formFields = FormField::find()
         'method' => 'get',
     ]); ?>
 
-    <?= $form->field($searchModel, 'field_id')->dropDownList($formFields, ['prompt' => 'Выберите поле']) ?>
+    <?= $form->field($searchModel, 'field_name')->dropDownList($formFields, ['prompt' => 'Выберите поле']) ?>
     <?= $form->field($searchModel, 'value')->textInput(['placeholder' => 'Введите значение']) ?>
 
     <div class="form-group">
