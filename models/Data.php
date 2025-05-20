@@ -3,6 +3,7 @@
 namespace app\models;
 
 use Yii;
+use yii\db\ActiveQuery;
 
 /**
  * This is the model class for table "data".
@@ -57,7 +58,7 @@ class Data extends \yii\db\ActiveRecord
     /**
      * Gets query for [[Forms]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getForms()
     {
@@ -67,7 +68,7 @@ class Data extends \yii\db\ActiveRecord
     /**
      * Gets query for [[Profiles]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
     public function getProfiles()
     {

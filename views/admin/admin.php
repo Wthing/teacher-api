@@ -13,7 +13,6 @@ $this->registerCsrfMetaTags();
 
 $fieldTypes = FormFieldType::find()->all();
 
-// Обработка фильтра
 $statusFilter = Yii::$app->request->get('statusFilter', 'active');
 $query = Form::find();
 
@@ -263,7 +262,7 @@ $('.restore-form-btn').on('click', function () {
         },
         success: function (response) {
             if (response.success) {
-                location.reload(); // просто перезагружаем страницу
+                location.reload(); 
             } else {
                 alert('Ошибка: ' + response.error);
             }
