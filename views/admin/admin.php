@@ -173,28 +173,64 @@ foreach ($formFields as $ff) {
     'title' => 'Добавить запись автокомплита',
 ]); ?>
 
-<div>
-    <form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin/create-autocomplete']) ?>">
-        <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
+<form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin/create-autocomplete']) ?>">
+    <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
 
-        <div class="mb-3">
-            <label for="field_id" class="form-label">Поле (field_id)</label>
-            <select name="FormFieldAutocomplete[field_id]" id="field_id" class="form-select" required>
+    <div id="autocompleteFieldsContainer">
+        <div class="autocomplete-entry mb-3 d-flex gap-2 align-items-start">
+            <select name="FormFieldAutocompleteEntries[0][field_id]" class="form-select" required>
                 <option value="">Выберите поле</option>
                 <?= $optionsFields ?>
             </select>
-        </div>
 
-        <div class="mb-3">
-            <label for="content" class="form-label">Контент автозаполнения</label>
-            <input type="text" name="FormFieldAutocomplete[content]" id="content" class="form-control" required maxlength="255">
-        </div>
+            <input type="text" name="FormFieldAutocompleteEntries[0][content]" class="form-control" placeholder="Контент автозаполнения" required maxlength="255">
 
-        <div class="text-end">
-            <button type="submit" class="btn btn-success">Сохранить</button>
+            <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
         </div>
-    </form>
-</div>
+    </div>
+
+    <button type="button" id="addAutocompleteEntry" class="btn btn-outline-secondary btn-sm mb-3">+ Добавить еще</button>
+
+    <div class="text-end">
+        <button type="submit" class="btn btn-success">Сохранить все</button>
+    </div>
+</form>
+
+<script>
+    (function(){
+        let index = 1;
+
+        document.getElementById('addAutocompleteEntry').addEventListener('click', function(){
+            const container = document.getElementById('autocompleteFieldsContainer');
+
+            const entry = document.createElement('div');
+            entry.classList.add('autocomplete-entry', 'mb-3', 'd-flex', 'gap-2', 'align-items-start');
+
+            entry.innerHTML = `
+                <select name="FormFieldAutocompleteEntries[${index}][field_id]" class="form-select" required>
+                    <option value="">Выберите поле</option>
+                    <?= addslashes($optionsFields) ?>
+                </select>
+
+                <input type="text" name="FormFieldAutocompleteEntries[${index}][content]" class="form-control" placeholder="Контент автозаполнения" required maxlength="255">
+
+                <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+            `;
+
+            container.appendChild(entry);
+
+            index++;
+        });
+
+        document.getElementById('autocompleteFieldsContainer').addEventListener('click', function(e){
+            if(e.target && e.target.classList.contains('remove-entry-btn')){
+                e.target.closest('.autocomplete-entry').remove();
+            }
+        });
+    })();
+</script>
+
+
 
 <?php Modal::end(); ?>
 

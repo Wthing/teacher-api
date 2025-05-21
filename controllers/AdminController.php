@@ -4,8 +4,10 @@ namespace app\controllers;
 
 use app\models\Form;
 use app\models\FormField;
+use app\models\FormFieldAutocomplete;
 use Yii;
 use yii\db\Exception;
+use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
 
@@ -126,15 +128,39 @@ class AdminController extends Controller
 
     public function actionCreateAutocomplete()
     {
-        $model = new \app\models\FormFieldAutocomplete();
+        $request = Yii::$app->request;
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            Yii::$app->session->setFlash('success', 'Запись автокомплита успешно сохранена.');
-            return $this->redirect(['admin/index']); // Или другой маршрут
+        if ($request->isPost) {
+            $entries = $request->post('FormFieldAutocompleteEntries', []);
+
+            $successCount = 0;
+            $errors = [];
+
+            foreach ($entries as $i => $entryData) {
+                $model = new FormFieldAutocomplete();
+                $model->field_id = $entryData['field_id'] ?? null;
+                $model->content = $entryData['content'] ?? null;
+
+                if ($model->validate() && $model->save()) {
+                    $successCount++;
+                } else {
+                    $errors[$i] = $model->errors;
+                }
+            }
+
+            if ($successCount > 0) {
+                Yii::$app->session->setFlash('success', "Успешно добавлено {$successCount} записей автозаполнения.");
+            }
+
+            if (!empty($errors)) {
+                Yii::$app->session->setFlash('error', "Некоторые записи не были сохранены. Ошибки: " . json_encode($errors));
+            }
+
+            return $this->redirect(['admin/index']); // или куда нужно
         }
 
-        Yii::$app->session->setFlash('error', 'Ошибка при сохранении записи автокомплита.');
-        return $this->redirect(['admin/index']);
+        throw new BadRequestHttpException('Неверный запрос.');
     }
+
 
 }
