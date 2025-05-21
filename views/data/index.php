@@ -21,9 +21,10 @@ $forms = ArrayHelper::map(Form::find()->all(), 'id', 'form_name');
         'method' => 'get',
     ]); ?>
 
-    <?= $form->field($searchModel, 'form_id')->dropDownList($forms, ['prompt' => 'Выберите форму']) ?>
-<!--    --><?php //= $form->field($searchModel, 'field_name')->textInput(['placeholder' => 'Введите имя поля']) ?>
-    <?= $form->field($searchModel, 'value')->textInput(['placeholder' => 'Введите значение']) ?>
+    <div>
+        <?= $form->field($searchModel, 'form_id')->dropDownList($forms, ['prompt' => 'Выберите форму']) ?>
+        <?= $form->field($searchModel, 'value')->textInput(['placeholder' => 'Введите значение']) ?>
+    </div>
 
     <div class="form-group">
         <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary']) ?>

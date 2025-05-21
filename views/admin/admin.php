@@ -1,6 +1,7 @@
 <?php
 
 use app\models\Form;
+use app\models\FormField;
 use app\models\FormFieldType;
 use yii\bootstrap5\Modal;
 use yii\helpers\Html;
@@ -27,6 +28,13 @@ $optionsHtml = '';
 foreach ($fieldTypes as $fieldType) {
     $optionsHtml .= "<option value=\"{$fieldType->id}\">{$fieldType->type_name}</option>";
 }
+
+$formFields = FormField::find()->all();
+
+$optionsFields = '';
+foreach ($formFields as $ff) {
+    $optionsFields .= "<option value=\"{$ff->id}\">" . Html::encode($ff->field_name) . "</option>";
+}
 ?>
 
 <div class="container mt-4">
@@ -36,7 +44,13 @@ foreach ($fieldTypes as $fieldType) {
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#formModalStep1">
             + Создать новую форму
         </button>
+
+        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#autocompleteModal">
+            + Добавить автозаполнение
+        </button>
     </div>
+
+
 
     <div class="mb-4">
         <form method="get">
@@ -153,6 +167,37 @@ foreach ($fieldTypes as $fieldType) {
 </div>
 
 <?php echo Html::endForm(); ?>
+
+<?php Modal::begin([
+    'id' => 'autocompleteModal',
+    'title' => 'Добавить запись автокомплита',
+]); ?>
+
+<div>
+    <form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin/create-autocomplete']) ?>">
+        <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
+
+        <div class="mb-3">
+            <label for="field_id" class="form-label">Поле (field_id)</label>
+            <select name="FormFieldAutocomplete[field_id]" id="field_id" class="form-select" required>
+                <option value="">Выберите поле</option>
+                <?= $optionsFields ?>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="content" class="form-label">Контент автозаполнения</label>
+            <input type="text" name="FormFieldAutocomplete[content]" id="content" class="form-control" required maxlength="255">
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Сохранить</button>
+        </div>
+    </form>
+</div>
+
+<?php Modal::end(); ?>
+
 
 <?php
 $addFieldJs = <<<JS

@@ -9,7 +9,7 @@ class DataSearch extends Data
 {
     public $field_name;
     public $value;
-    public $form_id; // ← Вот это нужно
+    public $form_id;
 
     public function rules()
     {

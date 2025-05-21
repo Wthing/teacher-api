@@ -124,7 +124,17 @@ class AdminController extends Controller
         return ['success' => false, 'error' => 'Не удалось сохранить изменения.'];
     }
 
+    public function actionCreateAutocomplete()
+    {
+        $model = new \app\models\FormFieldAutocomplete();
 
+        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            Yii::$app->session->setFlash('success', 'Запись автокомплита успешно сохранена.');
+            return $this->redirect(['admin/index']); // Или другой маршрут
+        }
 
+        Yii::$app->session->setFlash('error', 'Ошибка при сохранении записи автокомплита.');
+        return $this->redirect(['admin/index']);
+    }
 
 }
