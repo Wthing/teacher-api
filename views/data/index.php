@@ -3,11 +3,10 @@
 use app\models\DataSearch;
 use app\models\Form;
 use yii\data\ActiveDataProvider;
+use yii\grid\GridView;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use yii\grid\GridView;
-use app\models\FormField;
 
 /** @var DataSearch $searchModel */
 /** @var ActiveDataProvider $dataProvider */
@@ -23,7 +22,7 @@ $forms = ArrayHelper::map(Form::find()->all(), 'id', 'form_name');
     ]); ?>
 
     <?= $form->field($searchModel, 'form_id')->dropDownList($forms, ['prompt' => 'Выберите форму']) ?>
-    <?= $form->field($searchModel, 'field_name')->textInput(['placeholder' => 'Введите имя поля']) ?>
+<!--    --><?php //= $form->field($searchModel, 'field_name')->textInput(['placeholder' => 'Введите имя поля']) ?>
     <?= $form->field($searchModel, 'value')->textInput(['placeholder' => 'Введите значение']) ?>
 
     <div class="form-group">

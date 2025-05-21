@@ -42,10 +42,6 @@ class DataSearch extends Data
             $query->andWhere(['form_fields.form_id' => $this->form_id]);
         }
 
-        if (!empty($this->field_name)) {
-            $query->andWhere(['form_fields.field_name' => $this->field_name]);
-        }
-
         if (!empty($this->value)) {
             $query->andWhere(['like', 'data.data', $this->value]);
         }
