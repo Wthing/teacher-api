@@ -19,9 +19,6 @@ class AdminController extends Controller
             ['fields' => $fields]);
     }
 
-    /**
-     * @throws Exception
-     */
     public function actionCreate()
     {
         $form = new Form();

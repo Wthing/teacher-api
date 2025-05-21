@@ -52,7 +52,8 @@ foreach ($fieldTypes as $fieldType) {
     <div class="row">
         <?php foreach ($forms as $form): ?>
             <div class="col-md-4">
-                <div class="card mb-4 <?= !$form->status ? 'disabled-card' : '' ?>" style="<?= !$form->status ? 'opacity: 0.5;' : '' ?>">
+                <div class="card mb-4">
+<!--                <div class="card mb-4 --><?php //= !$form->status ? 'disabled-card' : '' ?><!--" style="--><?php //= !$form->status ? 'opacity: 0.5;' : '' ?><!--">-->
                     <div class="card-body">
                         <h5 class="card-title">
                             <?= Html::encode($form->form_name) ?>
@@ -234,7 +235,8 @@ $('.delete-form-btn').on('click', function () {
                 card.addClass('disabled-card');
                 card.find('.card-title').append(' <span class="badge bg-secondary">Отключена</span>');
                 card.css('opacity', '0.5');
-                card.find('button, a, input, select, textarea').prop('disabled', true);
+                card.find('button.toggle-form-btn, button.delete-form-btn').prop('disabled', true);
+                location.reload();
             } else {
                 alert('Ошибка при отключении: ' + response.error);
             }
@@ -244,6 +246,7 @@ $('.delete-form-btn').on('click', function () {
         }
     });
 });
+
 
 $('.restore-form-btn').on('click', function () {
     const formId = $(this).data('form-id');
