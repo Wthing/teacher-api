@@ -144,7 +144,6 @@ class SiteController extends Controller
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
 
-        Yii::info('Raw Data IDs: ' . implode(',', array_map(fn($d) => $d->id, $rawData)), 'profile');
 
         $groupedData = [];
         foreach ($rawData as $data) {
@@ -153,8 +152,6 @@ class SiteController extends Controller
                 'data' => $data->data,
             ];
         }
-
-        Yii::info('Grouped Data: ' . json_encode($groupedData), 'profile');
 
         return $this->render('profile', [
             'forms' => $forms,

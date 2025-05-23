@@ -13,6 +13,7 @@ use yii\db\ActiveRecord;
  * @property int $profile_id
  * @property int $field_id
  * @property string $data
+ * @property int $record_index
  *
  * @property Form $forms
  * @property Profile $profiles
@@ -40,6 +41,7 @@ class Data extends ActiveRecord
             [['data'], 'string'],
             [['field_id'], 'exist', 'skipOnError' => true, 'targetClass' => FormField::class, 'targetAttribute' => ['field_id' => 'id']],
             [['profile_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['profile_id' => 'id']],
+            [['record_index'], 'integer'],
         ];
     }
 

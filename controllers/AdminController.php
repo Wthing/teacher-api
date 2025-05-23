@@ -156,7 +156,7 @@ class AdminController extends Controller
                 Yii::$app->session->setFlash('error', "Некоторые записи не были сохранены. Ошибки: " . json_encode($errors));
             }
 
-            return $this->redirect(['admin/index']); // или куда нужно
+            return $this->redirect(['admin/index']);
         }
 
         throw new BadRequestHttpException('Неверный запрос.');

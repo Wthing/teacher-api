@@ -2,8 +2,9 @@
 
 namespace app\models;
 
-use yii\base\Model;
+use Yii;
 use yii\data\ActiveDataProvider;
+use yii\db\Query;
 
 class DataSearch extends Data
 {
@@ -19,33 +20,72 @@ class DataSearch extends Data
         ];
     }
 
-    public function scenarios()
+    public function search1($params)
     {
-        return Model::scenarios();
-    }
+        $recIndex = Data::find()
+            ->joinWith('formField')
+            ->select(['record_index'])
+            ->where(['data' => $this->value])
+            ->andWhere(['form_fields.form_id' => $this->form_id])
+            ->column();
 
-    public function search($params)
-    {
-        $query = Data::find()->joinWith(['formField.form']);
+        Yii::info($recIndex);
 
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query = Data::find()->select('*')->from('data')->groupBy($recIndex);
 
         $this->load($params);
 
         if (!$this->validate()) {
-            return $dataProvider;
+            $query->where('0=1');
+            return $query;
         }
 
-        if (!empty($this->form_id)) {
-            $query->andWhere(['form_fields.form_id' => $this->form_id]);
+        if ($this->form_id) {
+            $query->joinWith(['formField'])
+                ->andWhere(['form_fields.form_id' => $this->form_id]);
         }
 
-        if (!empty($this->value)) {
+        if ($this->value) {
             $query->andWhere(['like', 'data.data', $this->value]);
         }
 
-        return $dataProvider;
+        return $query;
     }
+
+    public function search($params)
+    {
+        $this->load($params);
+
+        if (!$this->validate()) {
+            return new ActiveDataProvider([
+                'query' => Data::find()->where('0=1')
+            ]);
+        }
+
+        $query = Data::find()
+            ->alias('d')
+            ->joinWith('formField ff')
+            ->where(['ff.form_id' => $this->form_id]);
+
+        if ($this->value) {
+            $matchingRecordIndex = Data::find()
+                ->select('record_index')
+                ->where(['like', 'data', $this->value])
+                ->column();
+
+            if ($matchingRecordIndex !== null) {
+                $query->andWhere(['d.record_index' => $matchingRecordIndex]);
+            } else {
+                $query->andWhere('0=1');
+            }
+        }
+
+        return new ActiveDataProvider([
+            'query' => $query
+        ]);
+    }
+
+
+
+
 }
