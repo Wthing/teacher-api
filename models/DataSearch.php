@@ -19,39 +19,6 @@ class DataSearch extends Data
             [['form_id'], 'integer'],
         ];
     }
-
-    public function search1($params)
-    {
-        $recIndex = Data::find()
-            ->joinWith('formField')
-            ->select(['record_index'])
-            ->where(['data' => $this->value])
-            ->andWhere(['form_fields.form_id' => $this->form_id])
-            ->column();
-
-        Yii::info($recIndex);
-
-        $query = Data::find()->select('*')->from('data')->groupBy($recIndex);
-
-        $this->load($params);
-
-        if (!$this->validate()) {
-            $query->where('0=1');
-            return $query;
-        }
-
-        if ($this->form_id) {
-            $query->joinWith(['formField'])
-                ->andWhere(['form_fields.form_id' => $this->form_id]);
-        }
-
-        if ($this->value) {
-            $query->andWhere(['like', 'data.data', $this->value]);
-        }
-
-        return $query;
-    }
-
     public function search($params)
     {
         $this->load($params);
@@ -64,16 +31,19 @@ class DataSearch extends Data
 
         $query = Data::find()
             ->alias('d')
-            ->joinWith('formField ff')
-            ->where(['ff.form_id' => $this->form_id]);
+            ->joinWith('formField ff');
 
-        if ($this->value) {
+        if (!empty($this->form_id)) {
+            $query->andWhere(['ff.form_id' => $this->form_id]);
+        }
+
+        if (!empty($this->value)) {
             $matchingRecordIndex = Data::find()
                 ->select('record_index')
                 ->where(['like', 'data', $this->value])
                 ->column();
 
-            if ($matchingRecordIndex !== null) {
+            if (!empty($matchingRecordIndex)) {
                 $query->andWhere(['d.record_index' => $matchingRecordIndex]);
             } else {
                 $query->andWhere('0=1');
@@ -84,8 +54,5 @@ class DataSearch extends Data
             'query' => $query
         ]);
     }
-
-
-
 
 }
