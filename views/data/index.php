@@ -59,13 +59,16 @@ $availableForms = ArrayHelper::map($forms, 'id', 'form_name');
 
             <?php for ($i = 0; $i < $maxCount; $i++): ?>
                 <?php
-                $rowDisplay = [];
                 $rowData = [];
                 $recordIds = [];
+                $imageColumn = '';
+                $textColumnItems = [];
 
                 foreach ($formFields as $field) {
                     $fieldId = $field->id;
                     $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+
+                    $displayValue = '';
 
                     if ($field->type_id == 5 && is_string($value) && $value !== '') {
                         $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
@@ -73,35 +76,45 @@ $availableForms = ArrayHelper::map($forms, 'id', 'form_name');
 
                         if (in_array($ext, $imageExtensions)) {
                             $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                            $imgTag = Html::img($url, ['style' => 'max-height:100px; max-width:150px; margin-right:10px;', 'alt' => basename($value)]);
-                            $rowDisplay[] = $imgTag;
+                            $displayValue = Html::img($url, [
+                                'style' => 'max-width: 500px; height: auto; border-radius: 8px;',
+                                'alt' => basename($value),
+                                'class' => 'img-thumbnail'
+                            ]);
+                            $imageColumn = $displayValue;
                         } else {
-                            $rowDisplay[] = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
+                            $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
+                            $textColumnItems[] = $displayValue;
                         }
                     } else {
                         if (is_string($value) && isValidUrl($value)) {
-                            $rowDisplay[] = Html::a(
-                                Html::encode($value),
-                                $value,
-                                ['target' => '_blank', 'rel' => 'noopener noreferrer']
-                            );
-                        } else if (is_array($value)) {
-                            $rowDisplay[] = Html::encode(implode(', ', $value));
+                            $displayValue = Html::a(Html::encode($value), $value, [
+                                'target' => '_blank',
+                                'rel' => 'noopener noreferrer'
+                            ]);
+                        } elseif (is_array($value)) {
+                            $displayValue = Html::encode(implode(', ', $value));
                         } else {
-                            $rowDisplay[] = Html::encode($value);
+                            $displayValue = Html::encode($value);
                         }
+
+                        $textColumnItems[] = $displayValue;
                     }
 
                     $rowData[$fieldId] = $value;
+
                     if (isset($fieldDataMap[$fieldId][$i]['id'])) {
                         $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
                     }
                 }
                 ?>
 
-                <div class="row mb-2 align-items-center" style="white-space: nowrap; overflow-x: auto;">
-                    <div class="col-md-10 text-truncate data-row" style="white-space: nowrap; overflow-x: auto; display: flex; align-items: center; gap: 10px;">
-                        <?= implode(' - ', $rowDisplay) ?>
+                <div class="row mb-3 border p-2 rounded" style="align-items: center;">
+                    <div class="col-auto">
+                        <?= $imageColumn ?>
+                    </div>
+                    <div class="col text-start" style="word-break: break-word;">
+                        <?= implode('<br>', $textColumnItems) ?>
                     </div>
                 </div>
             <?php endfor; ?>

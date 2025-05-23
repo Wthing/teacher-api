@@ -13,15 +13,12 @@ class DataController extends Controller
 {
     public function actionSearch()
     {
-        $profileId = Yii::$app->user->id;
-
         $searchModel = new DataSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         $forms = Form::find()->where(['status' => true])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 
-//        $rawData = $dataProvider->all();
         $rawData = $dataProvider->getModels();
         $groupedData = [];
         foreach ($rawData as $data) {

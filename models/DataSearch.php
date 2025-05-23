@@ -2,9 +2,7 @@
 
 namespace app\models;
 
-use Yii;
 use yii\data\ActiveDataProvider;
-use yii\db\Query;
 
 class DataSearch extends Data
 {
@@ -25,13 +23,21 @@ class DataSearch extends Data
 
         if (!$this->validate()) {
             return new ActiveDataProvider([
-                'query' => Data::find()->where('0=1')
+                'query' => Data::find()->where('0=1'),
+                'pagination' => false,
             ]);
         }
 
         $query = Data::find()
             ->alias('d')
             ->joinWith('formField ff');
+
+        if (empty($this->value) && empty($this->form_id)) {
+            return new ActiveDataProvider([
+                'query' => $query,
+                'pagination' => false,
+            ]);
+        }
 
         if (!empty($this->form_id)) {
             $query->andWhere(['ff.form_id' => $this->form_id]);
@@ -40,8 +46,7 @@ class DataSearch extends Data
         if (!empty($this->value)) {
             $matchingRecordIndex = Data::find()
                 ->select('record_index')
-                ->where(['like', 'data', $this->value])
-                ->column();
+                ->where(['like', 'data', $this->value]);
 
             if (!empty($matchingRecordIndex)) {
                 $query->andWhere(['d.record_index' => $matchingRecordIndex]);
@@ -51,8 +56,10 @@ class DataSearch extends Data
         }
 
         return new ActiveDataProvider([
-            'query' => $query
+            'query' => $query,
+            'pagination' => false,  // Отключаем пагинацию для вывода всех данных
         ]);
     }
+
 
 }
