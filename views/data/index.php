@@ -12,7 +12,8 @@ use yii\widgets\ActiveForm;
 /** @var array $fields */
 /** @var array $userData */
 
-function isValidUrl($url) {
+function isValidUrl($url): bool
+{
     return filter_var($url, FILTER_VALIDATE_URL) !== false;
 }
 
@@ -34,6 +35,7 @@ $availableForms = ArrayHelper::map($forms, 'id', 'form_name');
 
     <div class="form-group">
         <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Очистить', ['search'], ['class' => 'btn btn-warning']) ?>
     </div>
 
     <?php ActiveForm::end(); ?>
