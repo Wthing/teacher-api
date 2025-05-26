@@ -140,7 +140,7 @@ class SiteController extends Controller
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 
         $rawData = Data::find()
-            ->where(['profile_id' => 1])
+            ->where(['profile_id' => $profileId])
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
 
@@ -176,6 +176,7 @@ class SiteController extends Controller
     public function actionCreateFormData()
     {
         $profile = Profile::findOne(1);
+        $profileId = Yii::$app->user->id;
         $request = Yii::$app->request;
 
         if (!$request->isPost) {
@@ -215,7 +216,7 @@ class SiteController extends Controller
         foreach ($allFieldIds as $fieldId) {
             $record = new Data();
             $record->field_id = $fieldId;
-            $record->profile_id = $profile->id;
+            $record->profile_id = $profileId;
 
             $file = $files[$fieldId] ?? null;
             $value = $fieldValues[$fieldId] ?? null;
