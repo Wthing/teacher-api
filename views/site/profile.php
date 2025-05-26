@@ -113,7 +113,8 @@ foreach ($allAutocompleteRows as $entry) {
                         ✎
                     </button>
                     <button class="btn btn-danger btn-sm delete-field-btn"
-                            data-ids='<?= Json::encode($recordIds) ?>'>
+                            data-ids='<?= Json::encode($recordIds) ?>'
+                            name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
                         🗑
                     </button>
                 </div>

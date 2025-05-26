@@ -368,7 +368,7 @@ class SiteController extends Controller
 
     public function actionDeleteFormData()
     {
-        Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+        Yii::$app->response->format = Response::FORMAT_JSON;
 
         $dataIds = json_decode(Yii::$app->request->post('data_ids'), true);
         if (!is_array($dataIds)) {
