@@ -175,8 +175,8 @@ class SiteController extends Controller
 
     public function actionCreateFormData()
     {
-        $profile = Profile::findOne(1);
-        $profileId = Yii::$app->user->id;
+//        $profile = Profile::findOne(1);
+        $profile = Yii::$app->user;
         $request = Yii::$app->request;
         $recInd = Data::find()->select(['max(record_index)'])->scalar() + 1;
 
@@ -217,14 +217,14 @@ class SiteController extends Controller
         foreach ($allFieldIds as $fieldId) {
             $record = new Data();
             $record->field_id = $fieldId;
-            $record->profile_id = $profileId;
+            $record->profile_id = $profile->id;
             $record->record_index = $recInd;
 
             $file = $files[$fieldId] ?? null;
             $value = $fieldValues[$fieldId] ?? null;
 
             if ($file && is_file($file->tempName)) {
-                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->firstname . '_' . $profile->surename);
+                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->login);
                 $fileName = uniqid() . '_' . $safeName . '.' . $file->getExtension();
                 $uploadPath = $uploadDir . $fileName;
 
@@ -253,7 +253,7 @@ class SiteController extends Controller
 
     public function actionUpdateFormData()
     {
-        $profile = Profile::findOne(1);
+        $profile = Yii::$app->user;
         $request = Yii::$app->request;
 
         if (!$request->isPost) {
