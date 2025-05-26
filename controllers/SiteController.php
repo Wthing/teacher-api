@@ -175,8 +175,8 @@ class SiteController extends Controller
 
     public function actionCreateFormData()
     {
-//        $profile = Profile::findOne(1);
-        $profile = Yii::$app->user;
+        $currentUserId = Yii::$app->user->id;
+        $profile = Profile::findOne($currentUserId);
         $request = Yii::$app->request;
         $recInd = Data::find()->select(['max(record_index)'])->scalar() + 1;
 
@@ -253,7 +253,8 @@ class SiteController extends Controller
 
     public function actionUpdateFormData()
     {
-        $profile = Yii::$app->user;
+        $currentUserId = Yii::$app->user->id;
+        $profile = Profile::findOne($currentUserId);
         $request = Yii::$app->request;
 
         if (!$request->isPost) {
