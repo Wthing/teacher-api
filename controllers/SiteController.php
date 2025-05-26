@@ -178,6 +178,7 @@ class SiteController extends Controller
         $profile = Profile::findOne(1);
         $profileId = Yii::$app->user->id;
         $request = Yii::$app->request;
+        $recInd = Data::find()->select(['max(record_index)'])->scalar() + 1;
 
         if (!$request->isPost) {
             throw new BadRequestHttpException('Only POST allowed');
@@ -217,6 +218,7 @@ class SiteController extends Controller
             $record = new Data();
             $record->field_id = $fieldId;
             $record->profile_id = $profileId;
+            $record->record_index = $recInd;
 
             $file = $files[$fieldId] ?? null;
             $value = $fieldValues[$fieldId] ?? null;
