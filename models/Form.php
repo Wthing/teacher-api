@@ -56,4 +56,10 @@ class Form extends ActiveRecord
         return $this->hasMany(FormField::class, ['form_id' => 'id']);
     }
 
+    public function getData()
+    {
+        return $this->hasMany(Data::class, ['field_id' => 'id']);
+    }
+
+
 }

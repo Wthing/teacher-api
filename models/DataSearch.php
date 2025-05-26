@@ -57,7 +57,7 @@ class DataSearch extends Data
 
         return new ActiveDataProvider([
             'query' => $query,
-            'pagination' => false,  // Отключаем пагинацию для вывода всех данных
+            'pagination' => false,
         ]);
     }
 

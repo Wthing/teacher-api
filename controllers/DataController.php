@@ -16,7 +16,7 @@ class DataController extends Controller
         $searchModel = new DataSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        $forms = Form::find()->where(['status' => true])->all();
+        $forms = Form::find()->joinWith(['formFields.data d'])->where(['forms.status' => true])->andWhere(['IS NOT', 'd.data', null])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 
         $rawData = $dataProvider->getModels();

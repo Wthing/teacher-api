@@ -263,7 +263,7 @@ class SiteController extends Controller
 
         $formId = $request->post('form_id');
         $fieldValues = $request->post('field_values', []);
-        $recordIds = $request->post('record_ids', []); // <<<<< добавлено
+        $recordIds = $request->post('record_ids', []);
 
         if (empty($formId) || (empty($fieldValues) && empty($_FILES['field_files']['name']))) {
             Yii::$app->session->setFlash('error', 'Форма или данные пустые');

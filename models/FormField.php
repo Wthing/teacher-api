@@ -93,6 +93,11 @@ class FormField extends ActiveRecord
         return $this->hasOne(Form::class, ['id' => 'form_id']);
     }
 
+    public function getData()
+    {
+        return $this->hasOne(Data::class, ['field_id' => 'id']);
+    }
+
 
     public function getType()
     {
