@@ -65,7 +65,7 @@ foreach ($allAutocompleteRows as $entry) {
                     if (in_array($ext, $imageExtensions)) {
                         $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
                         $displayValue = Html::img($url, [
-                            'style' => 'max-width: 500px; height: auto; border-radius: 8px;',
+                            'style' => 'max-width: 200px; height: auto; border-radius: 8px;',
                             'alt' => basename($value),
                             'class' => 'img-thumbnail'
                         ]);
