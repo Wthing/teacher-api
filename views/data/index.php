@@ -9,6 +9,7 @@ use yii\widgets\ActiveForm;
 
 /** @var DataSearch $searchModel */
 /** @var Form[] $forms */
+/** @var Form[] $allForms */
 /** @var array $fields */
 /** @var array $userData */
 
@@ -17,7 +18,8 @@ function isValidUrl($url): bool
     return filter_var($url, FILTER_VALIDATE_URL) !== false;
 }
 
-$availableForms = ArrayHelper::map($forms, 'id', 'form_name');
+$availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
+
 
 ?>
 
