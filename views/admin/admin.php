@@ -38,13 +38,10 @@ foreach ($formFields as $ff) {
 ?>
 
 <div class="container mt-4">
-    <h1 class="mb-4">Конструктор форм</h1>
-
     <div class="mb-4">
         <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#formModalStep1">
             + Создать новую форму
         </button>
-
         <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#autocompleteModal">
             + Добавить автозаполнение
         </button>
@@ -54,7 +51,6 @@ foreach ($formFields as $ff) {
 
     <div class="mb-4">
         <form method="get">
-            <label for="statusFilter" class="form-label">Фильтр по статусу:</label>
             <select id="statusFilter" name="statusFilter" class="form-select" onchange="this.form.submit()">
                 <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>Все формы</option>
                 <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Только активные</option>

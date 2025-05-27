@@ -25,22 +25,48 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 
 <div class="data-search">
 
-    <?php $form = ActiveForm::begin([
-        'action' => ['search'],
-        'method' => 'get',
-    ]); ?>
+    <div class="container mb-4">
+        <?php $form = ActiveForm::begin([
+            'action' => ['search'],
+            'method' => 'get',
+        ]); ?>
 
-    <div>
-        <?= $form->field($searchModel, 'form_id')->dropDownList($availableForms, ['prompt' => 'Выберите форму']) ?>
-        <?= $form->field($searchModel, 'value')->textInput(['placeholder' => 'Введите значение']) ?>
+        <div class="row g-2 align-items-center"> <!-- заменено align-items-end на center -->
+            <div class="col">
+                <div class="form-group mb-0"> <!-- сбалансирован отступ -->
+                    <?= $form->field($searchModel, 'form_id')
+                        ->dropDownList($availableForms, [
+                            'prompt' => 'Выберите форму',
+                            'class' => 'form-select'
+                        ])
+                        ->label(false)
+                    ?>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group mb-0">
+                    <?= $form->field($searchModel, 'value')
+                        ->textInput([
+                            'placeholder' => 'Введите значение',
+                            'class' => 'form-control'
+                        ])
+                        ->label(false)
+                    ?>
+                </div>
+            </div>
+            <div class="col-auto">
+                <div class="form-group  d-flex gap-2 align-items-center h-100">
+                    <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary']) ?>
+                    <?= Html::a('Очистить', ['search'], ['class' => 'btn btn-warning']) ?>
+                </div>
+            </div>
+        </div>
+
+        <?php ActiveForm::end(); ?>
     </div>
 
-    <div class="form-group">
-        <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary']) ?>
-        <?= Html::a('Очистить', ['search'], ['class' => 'btn btn-warning']) ?>
-    </div>
 
-    <?php ActiveForm::end(); ?>
+
 
     <div class="container mt-3">
         <?php foreach ($forms as $form): ?>
