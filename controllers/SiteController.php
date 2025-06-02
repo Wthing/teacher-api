@@ -13,6 +13,8 @@ use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
+use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\web\UploadedFile;
 
@@ -172,6 +174,42 @@ class SiteController extends Controller
     }
 
 
+    public function actionApproveFormData($recordIndex)
+    {
+        $currentUserId = Yii::$app->user->id;
+        $reviewer = Profile::findOne($currentUserId);
+
+        // Например, только пользователи с ролью "reviewer" могут подтверждать
+        if (!$reviewer || !$reviewer->isReviewer()) {
+            throw new ForbiddenHttpException('У вас нет прав для подтверждения данных');
+        }
+
+        $records = Data::find()
+            ->where(['record_index' => $recordIndex])
+            ->andWhere(['is_confirmed' => false])
+            ->all();
+
+        if (empty($records)) {
+            Yii::$app->session->setFlash('error', 'Данные уже подтверждены или не найдены');
+            return $this->redirect(Yii::$app->request->referrer);
+        }
+
+        foreach ($records as $record) {
+            $record->is_confirmed = true;
+            $record->confirmed_by = $reviewer->id;
+            $record->confirmed_at = date('Y-m-d H:i:s');
+            if (!$record->save(false, ['is_confirmed', 'confirmed_by', 'confirmed_at'])) {
+                Yii::$app->session->setFlash('error', 'Ошибка при подтверждении данных');
+                return $this->redirect(Yii::$app->request->referrer);
+            }
+        }
+
+        Yii::$app->session->setFlash('success', 'Данные подтверждены');
+        return $this->redirect(Yii::$app->request->referrer);
+    }
+
+
+
 
     public function actionCreateFormData()
     {
@@ -219,6 +257,7 @@ class SiteController extends Controller
             $record->field_id = $fieldId;
             $record->profile_id = $profile->id;
             $record->record_index = $recInd;
+            $record->verification_status = Data::STATUS_PENDING;
 
             $file = $files[$fieldId] ?? null;
             $value = $fieldValues[$fieldId] ?? null;
@@ -248,8 +287,27 @@ class SiteController extends Controller
         }
 
         Yii::$app->session->setFlash('success', 'Данные успешно сохранены');
+
+        $this->sendConfirmationRequest($profile, $recInd);
+
         return $this->redirect(Yii::$app->request->referrer);
     }
+
+    protected function sendConfirmationRequest($profile, $recordIndex)
+    {
+        $reviewers = Profile::find()->where(['id' => 2])->all();
+
+        foreach ($reviewers as $reviewer) {
+            Yii::$app->mailerSend->send(
+                'wierd8things@gmail.com',
+                'Новая заявка на подтверждение',
+                "<p>Здравствуйте!</p>
+     <p>Новая заявка от пользователя <strong>{$profile->login}</strong>.</p>
+     <p><a href='" . Yii::$app->urlManager->createAbsoluteUrl(['admin/confirm', 'recordIndex' => $recordIndex]) . "'>Подтвердить данные</a></p>"
+            );
+        }
+    }
+
 
     public function actionUpdateFormData()
     {

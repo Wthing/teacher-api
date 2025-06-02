@@ -63,7 +63,6 @@ foreach ($formFields as $ff) {
         <?php foreach ($forms as $form): ?>
             <div class="col-md-4">
                 <div class="card mb-4">
-<!--                <div class="card mb-4 --><?php //= !$form->status ? 'disabled-card' : '' ?><!--" style="--><?php //= !$form->status ? 'opacity: 0.5;' : '' ?><!--">-->
                     <div class="card-body">
                         <h5 class="card-title">
                             <?= Html::encode($form->form_name) ?>
@@ -114,6 +113,12 @@ foreach ($formFields as $ff) {
             'required' => true,
             'id' => 'form-name',
             'placeholder' => 'Например: Обратная связь'
+        ]) ?>
+        <?= Html::label('Подтверждение', 'requires_verification', ['class' => 'form-label']) ?>
+        <?= Html::checkbox('Form[requires_verification]', [
+                'class' => 'form-control',
+                array('value' => 'true', 'uncheckedValue' => 0),
+                'id' => 'requires_verification',
         ]) ?>
     </div>
     <div class="text-end">

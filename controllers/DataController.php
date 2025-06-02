@@ -2,7 +2,6 @@
 
 namespace app\controllers;
 
-use app\models\Data;
 use app\models\DataSearch;
 use app\models\Form;
 use app\models\FormField;

@@ -28,11 +28,19 @@ $config = [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
-        'mailer' => [
-            'class' => \yii\symfonymailer\Mailer::class,
-            'viewPath' => '@app/mail',
-            // send all mails to a file by default.
-            'useFileTransport' => true,
+//        'mailer' => [
+//            'class' => 'yii\symfonymailer\Mailer',
+//            'useFileTransport' => false,
+//            'transport' => [
+//                'dsn' => 'smtp://MS_MKFzWj@test-r6ke4n1wr7vgon12.mlsender.net:mssp.kIDvRNt.jpzkmgq0xwy4059v.tBxyEHf@smtp.mailersend.net:587',
+//            ],
+//        ],
+
+        'mailerSend' => [
+            'class' => \app\components\MailerSendComponents::class,
+            'apiKey' => $_ENV['MAILERSEND_API_TOKEN'],
+            'fromEmail' => 'noreply@test-r6ke4n1wr7vgon12.mlsender.net',
+            'fromName' => 'Система форм',
         ],
         'log' => [
             'traceLevel' => YII_DEBUG ? 3 : 0,

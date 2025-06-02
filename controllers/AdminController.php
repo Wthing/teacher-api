@@ -2,13 +2,14 @@
 
 namespace app\controllers;
 
+use app\models\Data;
 use app\models\Form;
 use app\models\FormField;
 use app\models\FormFieldAutocomplete;
 use Yii;
-use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
+use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 class AdminController extends Controller
@@ -57,6 +58,35 @@ class AdminController extends Controller
         return $this->render('create', [
             'form' => $form,
         ]);
+    }
+
+    public function actionConfirm($recordIndex)
+    {
+        $dataRecords = Data::find()->where(['record_index' => $recordIndex])->all();
+
+        if (empty($dataRecords)) {
+            throw new NotFoundHttpException('Данные не найдены');
+        }
+
+        // Пример отображения: можешь заменить на форму с кнопкой "Подтвердить"
+        return $this->render('confirm', [
+            'records' => $dataRecords,
+        ]);
+    }
+
+    public function actionApprove()
+    {
+        $recordIndex = Yii::$app->request->post('record_index');
+
+        $records = Data::find()->where(['record_index' => $recordIndex])->all();
+
+        foreach ($records as $record) {
+            $record->verification_status = Data::STATUS_VERIFIED; // нужно добавить поле в таблицу!
+            $record->save(false);
+        }
+
+        Yii::$app->session->setFlash('success', 'Данные подтверждены');
+        return $this->redirect(['index']); // или куда нужно
     }
 
 

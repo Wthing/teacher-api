@@ -17,8 +17,12 @@
         "php": ">=8.3",
         "yiisoft/yii2": "~2.0.45",
         "yiisoft/yii2-bootstrap5": "~2.0.2",
-        "yiisoft/yii2-symfonymailer": "~2.0.3",
-      "ext-curl": "*"
+        "yiisoft/yii2-symfonymailer": "^4.0",
+      "ext-curl": "*",
+        "mailersend/mailersend": "^0.32.0",
+        "symfony/http-client": "^7.3",
+        "guzzlehttp/psr7": "^2.7",
+        "vlucas/phpdotenv": "^5.6"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
@@ -33,7 +37,8 @@
     },
     "config": {
         "allow-plugins": {
-            "yiisoft/yii2-composer" : true
+            "yiisoft/yii2-composer": true,
+            "php-http/discovery": true
         },
         "process-timeout": 1800,
         "fxp-asset": {
