@@ -39,10 +39,4 @@ class UserController extends Controller
         $data->save();
         return $this->redirect(['profile']);
     }
-
-    public function actionAuthorize()
-    {
-
-    }
-
 }

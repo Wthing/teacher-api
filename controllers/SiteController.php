@@ -5,6 +5,8 @@ namespace app\controllers;
 use app\models\ContactForm;
 use app\models\Data;
 use app\models\Form;
+use app\models\FormConfirmApplication;
+use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\LoginForm;
 use app\models\Profile;
@@ -187,6 +189,8 @@ class SiteController extends Controller
         $formId = $request->post('form_id');
         $fieldValues = $request->post('field_values', []);
 
+        $form = Form::findOne($formId);
+
         if (empty($formId) || (empty($fieldValues) && empty($_FILES['field_files']['name']))) {
             Yii::$app->session->setFlash('error', 'Форма или данные пустые');
             return $this->redirect(Yii::$app->request->referrer);
@@ -247,7 +251,33 @@ class SiteController extends Controller
             }
         }
 
-        Yii::$app->session->setFlash('success', 'Данные успешно сохранены');
+        if ($form->requiresFieldVerification($fieldId)) {
+            $request = new FormConfirmApplication();
+            $request->record_index = $recInd;
+            $request->created_by = $currentUserId;
+
+            // Найдём верификатора по ACL
+            $verifier = FormConfirmPerson::find()
+                ->where(['form_id' => $formId])
+                ->one();
+
+            if ($verifier) {
+                $request->assigned_to = $verifier->profile_id;
+                $request->status = 0;
+
+                if ($request->save()) {
+                    Yii::$app->session->setFlash('success', 'Данные отправлены на проверку');
+                } else {
+                    Yii::error($request->getErrors(), 'form');
+                    Yii::$app->session->setFlash('error', 'Ошибка создания запроса на подтверждение');
+                }
+            } else {
+                Yii::$app->session->setFlash('warning', 'Нет назначенного верификатора для этой формы');
+            }
+        } else {
+            Yii::$app->session->setFlash('success', 'Данные успешно сохранены');
+        }
+
         return $this->redirect(Yii::$app->request->referrer);
     }
 

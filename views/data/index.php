@@ -31,9 +31,9 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
             'method' => 'get',
         ]); ?>
 
-        <div class="row g-2 align-items-center"> <!-- заменено align-items-end на center -->
+        <div class="row g-2 align-items-center">
             <div class="col">
-                <div class="form-group mb-0"> <!-- сбалансирован отступ -->
+                <div class="form-group mb-0">
                     <?= $form->field($searchModel, 'form_id')
                         ->dropDownList($availableForms, [
                             'prompt' => 'Выберите форму',

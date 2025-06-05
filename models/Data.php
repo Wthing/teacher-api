@@ -14,12 +14,17 @@ use yii\db\ActiveRecord;
  * @property int $field_id
  * @property string $data
  * @property int $record_index
+ * @property int $verification_status
  *
  * @property Form $forms
  * @property Profile $profiles
  */
 class Data extends ActiveRecord
 {
+
+    const STATUS_PENDING = 0;
+    const STATUS_CONFIRMED = 1;
+    const STATUS_REJECTED = 2;
 
 
     /**
@@ -42,6 +47,7 @@ class Data extends ActiveRecord
             [['field_id'], 'exist', 'skipOnError' => true, 'targetClass' => FormField::class, 'targetAttribute' => ['field_id' => 'id']],
             [['profile_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['profile_id' => 'id']],
             [['record_index'], 'integer'],
+            [['verification_status'], 'default', 'value' => self::STATUS_PENDING],
         ];
     }
 
@@ -55,6 +61,7 @@ class Data extends ActiveRecord
             'profile_id' => Yii::t('app', 'Profile ID'),
             'field_id' => Yii::t('app', 'Field ID'),
             'data' => Yii::t('app', 'Data'),
+            'verification_status' => Yii::t('app', 'Verification Status'),
         ];
     }
 
@@ -94,6 +101,17 @@ class Data extends ActiveRecord
             ? $this->profile->surename . ' ' . $this->profile->firstname . ' ' . $this->profile->patronimyc
             : null;
     }
+
+    public function validateVerificationRequirement($attribute)
+    {
+        if (!$this->hasErrors()) {
+            $form = $this->formField->form;
+            if ($form && $form->requires_verification && $this->$attribute === null) {
+                $this->addError($attribute, 'Поле требует верификации.');
+            }
+        }
+    }
+
 
 
 

@@ -161,6 +161,4 @@ class AdminController extends Controller
 
         throw new BadRequestHttpException('Неверный запрос.');
     }
-
-
 }

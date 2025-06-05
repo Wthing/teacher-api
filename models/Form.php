@@ -11,6 +11,7 @@ use yii\db\ActiveRecord;
  * @property int $id
  * @property string $form_name
  * @property boolean $status
+ * @property boolean $requires_verification
  *
  * @property Data[] $datas
  * @property FormField[] $formFields
@@ -35,7 +36,7 @@ class Form extends ActiveRecord
         return [
             [['form_name'], 'required'],
             [['form_name'], 'string', 'max' => 255],
-            [['status'], 'boolean'],
+            [['status', 'requires_verification'], 'boolean'],
         ];
     }
 
@@ -48,6 +49,7 @@ class Form extends ActiveRecord
             'id' => Yii::t('app', 'ID'),
             'form_name' => Yii::t('app', 'Form Name'),
             'status' => Yii::t('app', 'Status'),
+            'requires_verification' => Yii::t('app', 'Requires Verification'),
         ];
     }
 
@@ -59,6 +61,12 @@ class Form extends ActiveRecord
     public function getData()
     {
         return $this->hasMany(Data::class, ['field_id' => 'id']);
+    }
+
+    public function requiresFieldVerification($fieldId)
+    {
+        $field = $this->getFormFields()->where(['id' => $fieldId])->one();
+        return $this->requires_verification && $field !== null && $field->status === 1;
     }
 
 
