@@ -39,6 +39,9 @@ class AdminController extends Controller
                     $field->form_id = $form->id;
                     $field->field_name = $fieldData['field_name'] ?? null;
                     $field->type_id = $fieldData['type_id'] ?? null;
+                    if ($form['requires_verification']) {
+                        $field->status = 1;
+                    }
 
                     if (!$field->save()) {
                         throw new \Exception('Ошибка при сохранении поля: ' . json_encode($field->errors));
@@ -54,7 +57,7 @@ class AdminController extends Controller
             }
         }
 
-        return $this->render('create', [
+        return $this->render('admin', [
             'form' => $form,
         ]);
     }

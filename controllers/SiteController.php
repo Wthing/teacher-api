@@ -172,18 +172,11 @@ class SiteController extends Controller
         ]);
     }
 
-
-
-
-
-
     public function actionGetFormFields($form_id)
     {
         $formFields = FormField::find()->where(['form_id' => $form_id])->all();
         return $this->asJson($formFields);
     }
-
-
 
     public function actionCreateFormData()
     {
