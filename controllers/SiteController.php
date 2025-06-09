@@ -139,12 +139,21 @@ class SiteController extends Controller
         $profileId = Yii::$app->user->id;
 
         $forms = Form::find()->where(['status' => true])->all();
-        $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
+        $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->column();
+        $accessGranted = FormConfirmPerson::find()->select('profile_id')->column();
 
         $rawData = Data::find()
             ->where(['profile_id' => $profileId])
+            ->andWhere(['verification_status' => true])
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
+
+        if (in_array($profileId, $accessGranted)) {
+            $unreadRequestsCount = FormConfirmApplication::find()
+                ->where(['created_by' => $profileId])
+                ->andWhere(['status' => FormConfirmApplication::STATUS_PENDING])
+                ->count();
+        }
 
 
         $groupedData = [];
@@ -159,6 +168,7 @@ class SiteController extends Controller
             'forms' => $forms,
             'fields' => $formFields,
             'userData' => $groupedData,
+            'unreadRequestsCount' => $unreadRequestsCount,
         ]);
     }
 
@@ -275,6 +285,13 @@ class SiteController extends Controller
                 Yii::$app->session->setFlash('warning', 'Нет назначенного верификатора для этой формы');
             }
         } else {
+            $recIndNew = Data::find()->select(['max(record_index)']);
+            $recordsCheck = Data::find()->where(['record_index' => $recIndNew])->all();
+            foreach ($recordsCheck as $record) {
+                $record->verification_status = 1;
+                $record->save();
+            }
+
             Yii::$app->session->setFlash('success', 'Данные успешно сохранены');
         }
 
