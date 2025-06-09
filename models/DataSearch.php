@@ -30,7 +30,8 @@ class DataSearch extends Data
 
         $query = Data::find()
             ->alias('d')
-            ->joinWith('formField ff');
+            ->joinWith('formField ff')
+            ->where(['verification_status' => 1]);
 
         if (empty($this->value) && empty($this->form_id)) {
             return new ActiveDataProvider([

@@ -3,10 +3,11 @@
 namespace app\controllers;
 
 use app\models\Form;
+use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\FormFieldAutocomplete;
+use app\models\Profile;
 use Yii;
-use yii\db\Exception;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
@@ -24,6 +25,7 @@ class AdminController extends Controller
     public function actionCreate()
     {
         $form = new Form();
+
 
         if ($form->load(Yii::$app->request->post())) {
 
@@ -48,9 +50,21 @@ class AdminController extends Controller
                     }
                 }
 
-                $transaction->commit();
+                if ($form->requires_verification) {
+                    $formConfirmPost = Yii::$app->request->post('FormConfirmPerson');
+                    Yii::info($formConfirmPost);
+                    $formConfirmPerson = new FormConfirmPerson();
+                    $formConfirmPerson->form_id = $form->id;
+                    $formConfirmPerson->profile_id = $formConfirmPost['profile_id'] ?? null;
 
+                    if (!$formConfirmPerson->save()) {
+                        throw new \Exception('Ошибка при сохранении поля: ' . json_encode($formConfirmPerson->errors));
+                    }
+                }
+
+                $transaction->commit();
                 return $this->redirect(['index']);
+
             } catch (\Exception $e) {
                 $transaction->rollBack();
                 Yii::$app->session->setFlash('error', 'Ошибка при сохранении: ' . $e->getMessage());
@@ -61,6 +75,7 @@ class AdminController extends Controller
             'form' => $form,
         ]);
     }
+
 
 
     public function actionFetchFieldsByFormId($id)

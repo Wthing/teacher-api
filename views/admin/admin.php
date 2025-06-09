@@ -3,11 +3,13 @@
 use app\models\Form;
 use app\models\FormField;
 use app\models\FormFieldType;
+use app\models\Profile;
 use yii\bootstrap5\Modal;
 use yii\helpers\Html;
 use yii\helpers\Url;
 
 /** @var yii\web\View $this */
+/** @var array $profiles */
 
 $this->title = 'Конструктор форм';
 $this->registerCsrfMetaTags();
@@ -35,6 +37,14 @@ $optionsFields = '';
 foreach ($formFields as $ff) {
     $optionsFields .= "<option value=\"{$ff->id}\">" . Html::encode($ff->field_name) . "</option>";
 }
+
+$profiles = Profile::find()->all();
+$profileOptions = '';
+foreach ($profiles as $profile) {
+    $profileOptions .= "<option value=\"{$profile->id}\">" . Html::encode($profile->login) . "</option>";
+    Yii::info($profileOptions);
+}
+
 ?>
 
 <div class="container mt-4">
@@ -46,8 +56,6 @@ foreach ($formFields as $ff) {
             + Добавить автозаполнение
         </button>
     </div>
-
-
 
     <div class="mb-4">
         <form method="get">
@@ -121,6 +129,12 @@ foreach ($formFields as $ff) {
             ]) ?>
             <?= Html::label('Нужно подтверждение', 'requires-verification', ['class' => 'form-check-label']) ?>
         </div>
+        <?= Html::label('Профиль формы', 'profile-id', ['class' => 'form-label']) ?>
+        <select name="FormConfirmPerson[profile_id]" id="profile-id" class="form-select" required>
+            <option value="">Выберите профиль</option>
+            <?= $profileOptions ?>
+        </select>
+
 
     </div>
     <div class="text-end">
