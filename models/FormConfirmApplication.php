@@ -101,6 +101,12 @@ class FormConfirmApplication extends ActiveRecord
     {
         $this->status = self::STATUS_REJECTED;
         $this->confirmed_at = time();
+        $record = Data::find()->where(['record_index' => $this->record_index])->all();
+        foreach ($record as $item) {
+            $item->verification_status = self::STATUS_REJECTED;
+            $item->save();
+        }
+
         return $this->save(false);
     }
 }
