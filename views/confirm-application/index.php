@@ -16,6 +16,8 @@ $this->title = 'Заявки на подтверждение';
         <th>ID</th>
         <th>Создано</th>
         <th>Ответственный</th>
+        <th>Время заявки</th>
+        <th>Время подтверждения/отклонения</th>
         <th>Статус</th>
         <th>Действия</th>
     </tr>
@@ -26,6 +28,8 @@ $this->title = 'Заявки на подтверждение';
             <td><?= $application->id ?></td>
             <td><?= $application->creator->login ?? 'Неизвестно' ?></td>
             <td><?= $application->assignee->login ?? 'Неизвестно' ?></td>
+            <td><?= date('Y-m-d H:i:s', $application->created_at) ?></td>
+            <td><?= date('Y-m-d H:i:s', $application->confirmed_at) ?></td>
             <td><?= $application->getStatusLabel() ?></td>
             <td>
                 <?= Html::a('Просмотр', ['view', 'id' => $application->id], ['class' => 'btn btn-primary btn-sm']) ?>
