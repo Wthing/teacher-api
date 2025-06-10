@@ -1,14 +1,16 @@
 <?php
 
 use app\models\Form;
-use app\models\FormConfirmApplication;
+use app\models\FormConfirmPerson;
 use app\models\FormFieldAutocomplete;
 use yii\helpers\Html;
 use yii\helpers\Json;
 
 /** @var Form[] $forms */
+/** @var int $profileId */
 /** @var array $userData */
 /** @var int $unreadRequestsCount */
+/** @var FormConfirmPerson $accessGranted */
 
 function isValidUrl($url) {
     return filter_var($url, FILTER_VALIDATE_URL) !== false;
@@ -22,23 +24,26 @@ foreach ($allAutocompleteRows as $entry) {
 ?>
 
 <div class="container mt-3">
-    <?php if ($unreadRequestsCount > 0): ?>
-        <div class="mb-3 text-end">
-            <a href="/confirm-application/" class="btn btn-outline-danger position-relative">
-                🔔
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                <?= $unreadRequestsCount ?>
-                <span class="visually-hidden">непрочитанные заявки</span>
-            </span>
-            </a>
-        </div>
-    <?php else: ?>
-        <div class="mb-3 text-end">
-            <a href="/confirm-application/" class="btn btn-outline-secondary">
-                🔔
-            </a>
-        </div>
+    <?php if (in_array($profileId, $accessGranted)): ?>
+        <?php if ($unreadRequestsCount > 0): ?>
+            <div class="mb-3 text-end">
+                <a href="/confirm-application/" class="btn btn-outline-danger position-relative">
+                    🔔
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    <?= $unreadRequestsCount ?>
+                    <span class="visually-hidden">непрочитанные заявки</span>
+                </span>
+                </a>
+            </div>
+        <?php else: ?>
+            <div class="mb-3 text-end">
+                <a href="/confirm-application/" class="btn btn-outline-secondary">
+                    🔔
+                </a>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
+
 
 
     <?php foreach ($forms as $form): ?>

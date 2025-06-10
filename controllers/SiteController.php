@@ -140,13 +140,15 @@ class SiteController extends Controller
 
         $forms = Form::find()->where(['status' => true])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->column();
-        $accessGranted = FormConfirmPerson::find()->select('profile_id')->column();
+        $accessGranted = FormConfirmPerson::find()->select('profile_id')->where(['profile_id' => $profileId])->column();
 
         $rawData = Data::find()
             ->where(['profile_id' => $profileId])
             ->andWhere(['verification_status' => true])
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
+
+        $unreadRequestsCount = 0;
 
         if (in_array($profileId, $accessGranted)) {
             $unreadRequestsCount = FormConfirmApplication::find()
@@ -165,10 +167,12 @@ class SiteController extends Controller
         }
 
         return $this->render('profile', [
+            'profileId' => $profileId,
             'forms' => $forms,
             'fields' => $formFields,
             'userData' => $groupedData,
             'unreadRequestsCount' => $unreadRequestsCount,
+            'accessGranted' => $accessGranted,
         ]);
     }
 
