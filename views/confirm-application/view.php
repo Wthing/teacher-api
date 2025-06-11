@@ -2,7 +2,6 @@
 
 use app\models\Form;
 use yii\helpers\Html;
-use yii\helpers\Json;
 
 /** @var yii\web\View $this */
 /** @var app\models\FormConfirmApplication $model */

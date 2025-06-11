@@ -204,9 +204,9 @@ class SiteController extends Controller
         }
 
         $uploadDir = Yii::getAlias('@webroot/uploads/');
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
+        $previewDir = Yii::getAlias('@webroot/uploads/previews/');
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        if (!is_dir($previewDir)) mkdir($previewDir, 0777, true);
 
         $files = [];
         if (isset($_FILES['field_files'])) {
@@ -241,6 +241,44 @@ class SiteController extends Controller
 
                 if ($file->saveAs($uploadPath)) {
                     $record->data = 'uploads/' . $fileName;
+
+                    // Генерация превью, если PDF или DOCX
+                    $ext = strtolower($file->getExtension());
+                    if ($ext === 'pdf' || $ext === 'docx') {
+                        $previewPath = $previewDir . pathinfo($fileName, PATHINFO_FILENAME) . '.jpg';
+
+                        try {
+                            if ($ext === 'docx') {
+                                // Преобразовать DOCX → PDF (требует libreoffice)
+                                $convertedPdf = $uploadDir . pathinfo($fileName, PATHINFO_FILENAME) . '.pdf';
+                                $command = 'libreoffice --headless --convert-to pdf --outdir ' . escapeshellarg($uploadDir) . ' ' . escapeshellarg($uploadPath);
+                                exec($command);
+
+                                if (file_exists($convertedPdf)) {
+                                    $imagick = new \Imagick();
+                                    $imagick->setResolution(150, 150);
+                                    $imagick->readImage($convertedPdf . '[0]');
+                                    $imagick->setImageFormat('jpeg');
+                                    $imagick->setImageCompressionQuality(90);
+                                    $imagick->writeImage($previewPath);
+                                    $imagick->clear();
+                                    $imagick->destroy();
+                                    @unlink($convertedPdf);
+                                }
+                            } else {
+                                $imagick = new \Imagick();
+                                $imagick->setResolution(150, 150);
+                                $imagick->readImage($uploadPath . '[0]');
+                                $imagick->setImageFormat('jpeg');
+                                $imagick->setImageCompressionQuality(90);
+                                $imagick->writeImage($previewPath);
+                                $imagick->clear();
+                                $imagick->destroy();
+                            }
+                        } catch (\Exception $e) {
+                            Yii::error('Ошибка создания превью: ' . $e->getMessage(), 'form');
+                        }
+                    }
                 } else {
                     Yii::$app->session->setFlash('error', 'Ошибка сохранения файла');
                     return $this->redirect(Yii::$app->request->referrer);
@@ -263,10 +301,7 @@ class SiteController extends Controller
             $request->record_index = $recInd;
             $request->created_by = $currentUserId;
 
-            // Найдём верификатора по ACL
-            $verifier = FormConfirmPerson::find()
-                ->where(['form_id' => $formId])
-                ->one();
+            $verifier = FormConfirmPerson::find()->where(['form_id' => $formId])->one();
 
             if ($verifier) {
                 $request->assigned_to = $verifier->profile_id;
@@ -295,6 +330,7 @@ class SiteController extends Controller
         return $this->redirect(Yii::$app->request->referrer);
     }
 
+
     public function actionUpdateFormData()
     {
         $currentUserId = Yii::$app->user->id;
@@ -315,9 +351,9 @@ class SiteController extends Controller
         }
 
         $uploadDir = Yii::getAlias('@webroot/uploads/');
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
+        $previewDir = Yii::getAlias('@webroot/uploads/previews/');
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        if (!is_dir($previewDir)) mkdir($previewDir, 0777, true);
 
         $files = [];
         if (isset($_FILES['field_files'])) {
@@ -364,12 +400,51 @@ class SiteController extends Controller
                     }
                 }
 
-                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->firstname . '_' . $profile->surename);
+                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->login);
                 $fileName = uniqid() . '_' . $safeName . '.' . $file->getExtension();
                 $uploadPath = $uploadDir . $fileName;
 
                 if ($file->saveAs($uploadPath)) {
                     $record->data = 'uploads/' . $fileName;
+
+                    // Генерация превью, если PDF или DOCX
+                    $ext = strtolower($file->getExtension());
+                    if ($ext === 'pdf' || $ext === 'docx') {
+                        $previewPath = $previewDir . pathinfo($fileName, PATHINFO_FILENAME) . '.jpg';
+
+                        try {
+                            if ($ext === 'docx') {
+                                // Преобразовать DOCX → PDF (требует libreoffice)
+                                $convertedPdf = $uploadDir . pathinfo($fileName, PATHINFO_FILENAME) . '.pdf';
+                                $command = 'libreoffice --headless --convert-to pdf --outdir ' . escapeshellarg($uploadDir) . ' ' . escapeshellarg($uploadPath);
+                                exec($command);
+
+                                if (file_exists($convertedPdf)) {
+                                    $imagick = new \Imagick();
+                                    $imagick->setResolution(150, 150);
+                                    $imagick->readImage($convertedPdf . '[0]');
+                                    $imagick->setImageFormat('jpeg');
+                                    $imagick->setImageCompressionQuality(90);
+                                    $imagick->writeImage($previewPath);
+                                    $imagick->clear();
+                                    $imagick->destroy();
+                                    @unlink($convertedPdf);
+                                }
+                            } else {
+                                $imagick = new \Imagick();
+                                $imagick->setResolution(150, 150);
+                                $imagick->readImage($uploadPath . '[0]');
+                                $imagick->setImageFormat('jpeg');
+                                $imagick->setImageCompressionQuality(90);
+                                $imagick->writeImage($previewPath);
+                                $imagick->clear();
+                                $imagick->destroy();
+                            }
+                        } catch (\Exception $e) {
+                            Yii::error('Ошибка создания превью: ' . $e->getMessage(), 'form');
+                        }
+                    }
+
                 } else {
                     Yii::$app->session->setFlash('error', "Ошибка загрузки файла поля $fieldId");
                     return $this->redirect(Yii::$app->request->referrer);
@@ -397,6 +472,7 @@ class SiteController extends Controller
         return $this->redirect(Yii::$app->request->referrer);
     }
 
+
     public function actionViewFormData($form_id)
     {
         $userData = Data::find()
@@ -422,22 +498,40 @@ class SiteController extends Controller
         foreach ($dataIds as $id) {
             $fieldData = Data::findOne($id);
             if ($fieldData) {
-                // Если в поле data есть путь к файлу из папки uploads/
+                // Если поле содержит путь к файлу
                 if ($fieldData->data && strpos($fieldData->data, 'uploads/') === 0) {
                     $filePath = Yii::getAlias('@webroot/') . $fieldData->data;
+
+                    // Удаляем основной файл
                     if (is_file($filePath)) {
                         if (!@unlink($filePath)) {
                             Yii::error("Не удалось удалить файл $filePath", __METHOD__);
                         }
                     }
+
+                    // Проверяем возможный превью-файл: .pdf или .jpg, .png
+                    $fileInfo = pathinfo($filePath);
+                    $previewPdf = $fileInfo['dirname'] . '/previews/' . $fileInfo['filename'] . '.pdf';
+                    $previewPng = $fileInfo['dirname'] . '/previews/' . $fileInfo['filename'] . '.png';
+                    $previewJpg = $fileInfo['dirname'] . '/previews/' . $fileInfo['filename'] . '.jpg';
+
+                    foreach ([$previewPdf, $previewPng, $previewJpg] as $previewFile) {
+                        if (is_file($previewFile)) {
+                            if (!@unlink($previewFile)) {
+                                Yii::error("Не удалось удалить превью $previewFile", __METHOD__);
+                            }
+                        }
+                    }
                 }
 
+                // Удаляем запись из базы
                 $fieldData->delete();
             }
         }
 
         return ['success' => true];
     }
+
 
 
 }

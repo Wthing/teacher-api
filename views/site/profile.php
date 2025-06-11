@@ -71,85 +71,111 @@ foreach ($allAutocompleteRows as $entry) {
             </button>
         </div>
 
-        <?php for ($i = 0; $i < $maxCount; $i++): ?>
-            <?php
-            $rowData = [];
-            $recordIds = [];
-            $imageColumn = '';
-            $textColumnItems = [];
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <?php foreach ($formFields as $field): ?>
+                        <th><?= Html::encode($field->field_name) ?></th>
+                    <?php endforeach; ?>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <?php for ($i = 0; $i < $maxCount; $i++): ?>
+                    <?php
+                    $rowData = [];
+                    $recordIds = [];
+                    ?>
+                    <tr>
+                        <?php foreach ($formFields as $field): ?>
+                            <?php
+                            $fieldId = $field->id;
+                            $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                            $displayValue = '';
 
-            foreach ($formFields as $field) {
-                $fieldId = $field->id;
-                $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                            if ($field->type_id == 5 && is_string($value) && $value !== '') {
+                                $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
-                $displayValue = '';
+                                if (in_array($ext, $imageExtensions)) {
+                                    $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
+                                    Yii::info('image extension: ' . $url);
+                                    $displayValue = Html::img($url, [
+                                        'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                        'alt' => basename($value),
+                                        'class' => 'img-thumbnail'
+                                    ]);
+                                } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
+                                    $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
+                                    Yii::info('image pdf: ' . $url);
 
-                if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                    $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
-                    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+                                    $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
+                                    Yii::info('image extension pdf: ' . $previewUrl);
+                                    $documentUrl = Yii::getAlias('@web') . $value;
 
-                    if (in_array($ext, $imageExtensions)) {
-                        $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                        $displayValue = Html::img($url, [
-                            'style' => 'max-width: 200px; height: auto; border-radius: 8px;',
-                            'alt' => basename($value),
-                            'class' => 'img-thumbnail'
-                        ]);
-                        $imageColumn = $displayValue;
-                    } else {
-                        $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
-                        $textColumnItems[] = $displayValue;
-                    }
-                } else {
-                    if (is_string($value) && isValidUrl($value)) {
-                        $displayValue = Html::a(Html::encode($value), $value, [
-                            'target' => '_blank',
-                            'rel' => 'noopener noreferrer'
-                        ]);
-                    } elseif (is_array($value)) {
-                        $displayValue = Html::encode(implode(', ', $value));
-                    } else {
-                        $displayValue = Html::encode($value);
-                    }
+                                    $displayValue = Html::a(
+                                        Html::img($previewUrl, [
+                                            'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                            'alt' => basename($value),
+                                            'class' => 'img-thumbnail',
+                                        ]),
+                                        $documentUrl,
+                                        [
+                                            'target' => '_blank', // открывать в новой вкладке
+                                            'title' => 'Открыть документ: ' . basename($value),
+                                        ]
+                                    );
+                                }
+                                else {
+                                    $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
+                                }
+                            } else {
+                                if (is_string($value) && isValidUrl($value)) {
+                                    $displayValue = Html::a(Html::encode($value), $value, [
+                                        'target' => '_blank',
+                                        'rel' => 'noopener noreferrer'
+                                    ]);
+                                } elseif (is_array($value)) {
+                                    $displayValue = Html::encode(implode(', ', $value));
+                                } else {
+                                    $displayValue = Html::encode($value);
+                                }
+                            }
 
-                    $textColumnItems[] = $displayValue;
-                }
+                            $rowData[$fieldId] = $value;
 
-                $rowData[$fieldId] = $value;
+                            if (isset($fieldDataMap[$fieldId][$i]['id'])) {
+                                $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
+                            }
+                            ?>
+                            <td><?= $displayValue ?></td>
+                        <?php endforeach; ?>
 
-                if (isset($fieldDataMap[$fieldId][$i]['id'])) {
-                    $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
-                }
-            }
-            ?>
-
-            <div class="row mb-3 border p-2 rounded" style="align-items: center;">
-                <div class="col-auto">
-                    <?= $imageColumn ?>
-                </div>
-                <div class="col text-start" style="word-break: break-word;">
-                    <?= implode('<br>', $textColumnItems) ?>
-                </div>
-                <div class="col-md-2 text-end">
-                    <button class="btn btn-warning btn-sm edit-field-btn"
-                            data-form="<?= $form->id ?>"
-                            data-ids='<?= Json::encode($recordIds) ?>'
-                            data-values='<?= Json::encode($rowData) ?>'
-                            data-fields='<?= Json::encode($formFields) ?>'>
-                        ✎
-                    </button>
-                    <button class="btn btn-danger btn-sm delete-field-btn"
-                            data-ids='<?= Json::encode($recordIds) ?>'
-                            name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
-                        🗑
-                    </button>
-                </div>
-            </div>
-        <?php endfor; ?>
+                        <td class="text-end">
+                            <button class="btn btn-warning btn-sm edit-field-btn"
+                                    data-form="<?= $form->id ?>"
+                                    data-ids='<?= Json::encode($recordIds) ?>'
+                                    data-values='<?= Json::encode($rowData) ?>'
+                                    data-fields='<?= Json::encode($formFields) ?>'>
+                                ✎
+                            </button>
+                            <button class="btn btn-danger btn-sm delete-field-btn"
+                                    data-ids='<?= Json::encode($recordIds) ?>'
+                                    name="<?= Yii::$app->request->csrfParam ?>"
+                                    value="<?= Yii::$app->request->getCsrfToken() ?>">
+                                🗑
+                            </button>
+                        </td>
+                    </tr>
+                <?php endfor; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endforeach; ?>
-</div>
 
-<!-- Edit Modal -->
+
+    <!-- Edit Modal -->
 <div class="modal fade" id="editFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="editFieldModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">

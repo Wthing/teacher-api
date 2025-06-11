@@ -4,7 +4,6 @@ use app\models\DataSearch;
 use app\models\Form;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
-use yii\helpers\Json;
 use yii\widgets\ActiveForm;
 
 /** @var DataSearch $searchModel */
