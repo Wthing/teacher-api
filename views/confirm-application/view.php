@@ -2,6 +2,7 @@
 
 use app\models\Form;
 use yii\helpers\Html;
+use yii\helpers\Json;
 
 /** @var yii\web\View $this */
 /** @var app\models\FormConfirmApplication $model */
@@ -50,73 +51,88 @@ function isValidUrl($url) {
             $fieldDataMap[$field->id] = $userData[$field->id] ?? [];
         }
 
+        // Максимальное количество строк в текущем наборе данных
         $maxCount = 0;
         foreach ($fieldDataMap as $dataRows) {
             $maxCount = max($maxCount, count($dataRows));
         }
+
+        // Если данных нет ни в одном поле формы, не отображаем таблицу
+        if ($maxCount === 0) {
+            continue;
+        }
         ?>
 
-        <?php for ($i = 0; $i < $maxCount; $i++): ?>
-            <?php
-            $rowData = [];
-            $recordIds = [];
-            $imageColumn = '';
-            $textColumnItems = [];
+        <div class="table-responsive mb-4">
+            <h4><?= Html::encode($form->form_name) ?></h4>
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <?php foreach ($formFields as $field): ?>
+                        <th><?= Html::encode($field->field_name) ?></th>
+                    <?php endforeach; ?>
+                </tr>
+                </thead>
+                <tbody>
+                <?php for ($i = 0; $i < $maxCount; $i++): ?>
+                    <tr>
+                        <?php foreach ($formFields as $field): ?>
+                            <?php
+                            $fieldId = $field->id;
+                            $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                            $displayValue = '';
 
-            foreach ($formFields as $field) {
-                $fieldId = $field->id;
-                $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                            if ($field->type_id == 5 && is_string($value) && $value !== '') {
+                                $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
-                $displayValue = '';
+                                if (in_array($ext, $imageExtensions)) {
+                                    $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
+                                    $displayValue = Html::img($url, [
+                                        'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                        'alt' => basename($value),
+                                        'class' => 'img-thumbnail'
+                                    ]);
+                                } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
+                                    $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
+                                    $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
+                                    $documentUrl = Yii::getAlias('@web') . $value;
 
-                if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                    $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
-                    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-
-                    if (in_array($ext, $imageExtensions)) {
-                        $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                        $displayValue = Html::img($url, [
-                            'style' => 'max-width: 200px; height: auto; border-radius: 8px;',
-                            'alt' => basename($value),
-                            'class' => 'img-thumbnail'
-                        ]);
-                        $imageColumn = $displayValue;
-                    } else {
-                        $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
-                        $textColumnItems[] = $displayValue;
-                    }
-                } else {
-                    if (is_string($value) && isValidUrl($value)) {
-                        $displayValue = Html::a(Html::encode($value), $value, [
-                            'target' => '_blank',
-                            'rel' => 'noopener noreferrer'
-                        ]);
-                    } elseif (is_array($value)) {
-                        $displayValue = Html::encode(implode(', ', $value));
-                    } else {
-                        $displayValue = Html::encode($value);
-                    }
-
-                    $textColumnItems[] = $displayValue;
-                }
-
-                $rowData[$fieldId] = $value;
-
-                if (isset($fieldDataMap[$fieldId][$i]['id'])) {
-                    $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
-                }
-            }
-            ?>
-
-            <div class="row mb-3 border p-2 rounded" style="align-items: center;">
-                <div class="col-auto">
-                    <?= $imageColumn ?>
-                </div>
-                <div class="col text-start" style="word-break: break-word;">
-                    <?= implode('<br>', $textColumnItems) ?>
-                </div>
-
-            </div>
-        <?php endfor; ?>
+                                    $displayValue = Html::a(
+                                        Html::img($previewUrl, [
+                                            'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                            'alt' => basename($value),
+                                            'class' => 'img-thumbnail',
+                                        ]),
+                                        $documentUrl,
+                                        [
+                                            'target' => '_blank',
+                                            'title' => 'Открыть документ: ' . basename($value),
+                                        ]
+                                    );
+                                } else {
+                                    $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
+                                }
+                            } else {
+                                if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
+                                    $displayValue = Html::a(Html::encode($value), $value, [
+                                        'target' => '_blank',
+                                        'rel' => 'noopener noreferrer'
+                                    ]);
+                                } elseif (is_array($value)) {
+                                    $displayValue = Html::encode(implode(', ', $value));
+                                } else {
+                                    $displayValue = Html::encode($value);
+                                }
+                            }
+                            ?>
+                            <td><?= $displayValue ?></td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endfor; ?>
+                </tbody>
+            </table>
+        </div>
     <?php endforeach; ?>
 </div>
+
