@@ -112,7 +112,10 @@ foreach ($allAutocompleteRows as $entry) {
 
                                     $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
                                     Yii::info('image extension pdf: ' . $previewUrl);
-                                    $documentUrl = Yii::getAlias('@web') . $value;
+                                    $documentUrl = '/' . ltrim($value, '/');
+
+
+
 
                                     $displayValue = Html::a(
                                         Html::img($previewUrl, [
@@ -122,13 +125,18 @@ foreach ($allAutocompleteRows as $entry) {
                                         ]),
                                         $documentUrl,
                                         [
-                                            'target' => '_blank', // открывать в новой вкладке
+                                            'target' => '_blank',
                                             'title' => 'Открыть документ: ' . basename($value),
                                         ]
                                     );
                                 }
                                 else {
-                                    $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
+                                    $displayValue = Html::a(
+                                        basename($value),
+                                        '/' . ltrim($value, '/'), // <-- абсолютный путь от корня
+                                        ['target' => '_blank']
+                                    );
+
                                 }
                             } else {
                                 if (is_string($value) && isValidUrl($value)) {

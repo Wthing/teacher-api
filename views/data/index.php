@@ -122,7 +122,7 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                                     } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
                                         $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
                                         $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
-                                        $documentUrl = Yii::getAlias('@web') . $value;
+                                        $documentUrl = '/' . ltrim($value, '/');
 
                                         $displayValue = Html::a(
                                             Html::img($previewUrl, [
@@ -137,7 +137,11 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                                             ]
                                         );
                                     } else {
-                                        $displayValue = Html::a(basename($value), Yii::getAlias('@web') . '/' . ltrim($value, '/'), ['target' => '_blank']);
+                                        $displayValue = Html::a(
+                                            basename($value),
+                                            '/' . ltrim($value, '/'),
+                                            ['target' => '_blank']
+                                        );
                                     }
                                 } else {
                                     if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
