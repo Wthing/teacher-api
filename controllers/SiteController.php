@@ -10,6 +10,7 @@ use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\LoginForm;
 use app\models\Profile;
+use app\models\User;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -140,10 +141,10 @@ class SiteController extends Controller
 
         $forms = Form::find()->where(['status' => true])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->column();
-        $accessGranted = FormConfirmPerson::find()->select('profile_id')->where(['profile_id' => $profileId])->column();
+        $accessGranted = FormConfirmPerson::find()->select('user_id')->where(['user_id' => $profileId])->column();
 
         $rawData = Data::find()
-            ->where(['profile_id' => $profileId])
+            ->where(['user_id' => $profileId])
             ->andWhere(['verification_status' => true])
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
@@ -185,7 +186,7 @@ class SiteController extends Controller
     public function actionCreateFormData()
     {
         $currentUserId = Yii::$app->user->id;
-        $profile = Profile::findOne($currentUserId);
+        $profile = User::findOne($currentUserId);
         $request = Yii::$app->request;
         $recInd = Data::find()->select(['max(record_index)'])->scalar() + 1;
 
@@ -228,7 +229,7 @@ class SiteController extends Controller
         foreach ($allFieldIds as $fieldId) {
             $record = new Data();
             $record->field_id = $fieldId;
-            $record->profile_id = $profile->id;
+            $record->user_id = $profile->id;
             $record->record_index = $recInd;
 
             $file = $files[$fieldId] ?? null;

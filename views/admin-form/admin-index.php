@@ -106,7 +106,7 @@ foreach ($profiles as $profile) {
     </div>
 </div>
 
-<?php echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']); ?>
+<?php echo Html::beginForm(Url::to(['admin-form/create']), 'post', ['id' => 'mainForm']); ?>
 
 <?php Modal::begin([
     'id' => 'formModalStep1',
@@ -190,7 +190,7 @@ foreach ($profiles as $profile) {
     'title' => 'Добавить запись автокомплита',
 ]); ?>
 
-<form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin/create-autocomplete']) ?>">
+<form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin-form/create-autocomplete']) ?>">
     <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
 
     <div id="autocompleteFieldsContainer">
@@ -280,7 +280,7 @@ $('.toggle-form-btn').on('click', function () {
     modalBody.html('<p>Загрузка...</p>');
 
     $.ajax({
-        url: '/admin/fetch-fields-by-form-id',
+        url: '/admin-form/fetch-fields-by-form-id',
         method: 'GET',
         data: { id: formId },
         success: function (response) {
@@ -322,7 +322,7 @@ $('.delete-form-btn').on('click', function () {
     }
 
     $.ajax({
-        url: '/admin/delete-form',
+        url: '/admin-form/delete-form',
         type: 'POST',
         data: {
             id: formId,
@@ -355,7 +355,7 @@ $('.restore-form-btn').on('click', function () {
     }
 
     $.ajax({
-        url: '/admin/restore-form',
+        url: '/admin-form/restore-form',
         type: 'POST',
         data: {
             id: formId,

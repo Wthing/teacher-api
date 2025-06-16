@@ -30,32 +30,37 @@ class LoginForm extends Model
             return false;
         }
 
-        $client = new UniverApiClient();
-        if (!$client->authenticate($this->login, $this->password)) {
+        $client  = new \app\services\UniverApiClient();
+        $apiData = $client->authenticate($this->login, $this->password);
+
+        if ($apiData === null) {
             $this->addError('password', 'Неверный логин или пароль');
             return false;
         }
 
-        $user = (new Profile)->findByUsername($this->login);
-        if (!$user) {
-            $user = new Profile();
-            $user->login = $this->login;
+        $externalId = (int)$apiData['userId'];
+        /* === ищем или создаём пользователя по внешнему ID === */
+        $user = \app\models\User::findOne($externalId);
+        if ($user === null) {
+            $user         = new \app\models\User();
+            $user->id     = $externalId;      // важный момент — задаём ID вручную
+            $user->status = 10;
         }
+
+        $user->username = $this->login;
+
         if (empty($user->auth_key)) {
             $user->generateAuthKey();
         }
         $user->setPassword($this->password);
         $user->save(false);
 
-        if (Yii::$app->user->login($user, 3600 * 24 * 30)) {
-            Yii::info("Login success", __METHOD__);
-        } else {
-            Yii::error("Login failed", __METHOD__);
-        }
+        /* === логиним === */
+        $loggedIn = Yii::$app->user->login($user, 3600 * 24 * 30); // 30 дней
 
+        Yii::info($loggedIn ? 'Login success' : 'Login failed', __METHOD__);
 
-        // Авторизуем пользователя
-        return Yii::$app->user->login($user, 3600 * 24 * 30); // 30 дней
+        return $loggedIn;
     }
 
 }

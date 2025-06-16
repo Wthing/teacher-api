@@ -24,7 +24,7 @@ class ContactFormTest extends \Codeception\Test\Unit
             'verifyCode' => 'testme',
         ];
 
-        verify($model->contact('admin@example.com'))->notEmpty();
+        verify($model->contact('admin-form@example.com'))->notEmpty();
 
         // using Yii2 module actions to check email was sent
         $this->tester->seeEmailIsSent();
@@ -32,7 +32,7 @@ class ContactFormTest extends \Codeception\Test\Unit
         /** @var MessageInterface $emailMessage */
         $emailMessage = $this->tester->grabLastSentEmail();
         verify($emailMessage)->instanceOf('yii\mail\MessageInterface');
-        verify($emailMessage->getTo())->arrayHasKey('admin@example.com');
+        verify($emailMessage->getTo())->arrayHasKey('admin-form@example.com');
         verify($emailMessage->getFrom())->arrayHasKey('noreply@example.com');
         verify($emailMessage->getReplyTo())->arrayHasKey('tester@example.com');
         verify($emailMessage->getSubject())->equals('very important letter subject');

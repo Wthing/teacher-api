@@ -12,13 +12,13 @@ use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
 
-class AdminController extends Controller
+class AdminFormController extends Controller
 {
     public function actionIndex()
     {
         $fields = FormField::find()->all();
 
-        return $this->render('admin',
+        return $this->render('admin-index',
             ['fields' => $fields]);
     }
 
@@ -71,7 +71,7 @@ class AdminController extends Controller
             }
         }
 
-        return $this->render('admin', [
+        return $this->render('admin-index', [
             'form' => $form,
         ]);
     }
@@ -174,7 +174,7 @@ class AdminController extends Controller
                 Yii::$app->session->setFlash('error', "Некоторые записи не были сохранены. Ошибки: " . json_encode($errors));
             }
 
-            return $this->redirect(['admin/index']);
+            return $this->redirect(['admin-form/index']);
         }
 
         throw new BadRequestHttpException('Неверный запрос.');
