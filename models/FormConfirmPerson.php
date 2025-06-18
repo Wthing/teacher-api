@@ -9,7 +9,7 @@ use yii\db\ActiveRecord;
  * This is the model class for table "form_confirm_person".
  *
  * @property int $id
- * @property int $profile_id
+ * @property int $user_id
  * @property int $form_id
  *
  * @property Profile $profile
@@ -25,9 +25,9 @@ class FormConfirmPerson extends ActiveRecord
     public function rules()
     {
         return [
-            [['profile_id', 'form_id'], 'required'],
-            [['profile_id', 'form_id'], 'integer'],
-            [['profile_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['profile_id' => 'id']],
+            [['user_id', 'form_id'], 'required'],
+            [['user_id', 'form_id'], 'integer'],
+            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['user_id' => 'id']],
             [['form_id'], 'exist', 'skipOnError' => true, 'targetClass' => Form::class, 'targetAttribute' => ['form_id' => 'id']],
         ];
     }
@@ -36,14 +36,14 @@ class FormConfirmPerson extends ActiveRecord
     {
         return [
             'id' => 'ID',
-            'profile_id' => 'Подтверждающий пользователь',
+            'user_id' => 'Подтверждающий пользователь',
             'form_id' => 'Форма',
         ];
     }
 
     public function getProfile()
     {
-        return $this->hasOne(Profile::class, ['id' => 'profile_id']);
+        return $this->hasOne(Profile::class, ['id' => 'user_id']);
     }
 
     public function getForm()

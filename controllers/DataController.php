@@ -7,10 +7,27 @@ use app\models\DataSearch;
 use app\models\Form;
 use app\models\FormField;
 use Yii;
+use yii\filters\AccessControl;
 use yii\web\Controller;
 
 class DataController extends Controller
 {
+
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ]
+                ]
+            ]
+        ];
+    }
+
     public function actionSearch()
     {
         $searchModel = new DataSearch();

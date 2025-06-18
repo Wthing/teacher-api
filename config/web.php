@@ -12,17 +12,54 @@ $config = [
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
+        '@mdm'   => '@vendor/mdmsoft',
+        '@mdm/admin' => '@mdm/yii2-admin'
     ],
+
+    'modules' => [
+        'admin' => [
+
+            'layout' => 'left-menu',
+            'menus' => [
+                'assignment' => [
+                    'label' => 'Grant Access'
+                ],
+                'menu' => null,
+                'class' => null,
+                'idField' => null,
+                'usernameField' => null,
+            ],
+
+            'class' => 'mdm\admin\Module',
+
+            'controllerMap' => [
+                'class' => 'mdm\admin\controllers\AssignmentController',
+                'idField' => 'id',
+                'usernameField' => 'username',
+            ]
+        ],
+    ],
+
     'components' => [
+
+        'authManager' => [
+            'class' => 'yii\rbac\DbManager',
+            'defaultRoles' => ['admin', 'super-teacher'],
+        ],
+        'as access' => [
+            'class' => 'mdm\admin\components\AccessControl',
+            'allowActions' => [
+            ]
+        ],
+
         'request' => [
-            // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'ZHeB9eXImqVGA8utjmwwivvWa2tu7XVX',
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
         'user' => [
-            'identityClass' => 'app\models\Profile',
+            'identityClass' => 'app\models\User',
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [

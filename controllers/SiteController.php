@@ -140,10 +140,10 @@ class SiteController extends Controller
 
         $forms = Form::find()->where(['status' => true])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->column();
-        $accessGranted = FormConfirmPerson::find()->select('profile_id')->where(['profile_id' => $profileId])->column();
+        $accessGranted = FormConfirmPerson::find()->select('user_id')->where(['user_id' => $profileId])->column();
 
         $rawData = Data::find()
-            ->where(['profile_id' => $profileId])
+            ->where(['user_id' => $profileId])
             ->andWhere(['verification_status' => true])
             ->orderBy(['field_id' => SORT_ASC])
             ->all();
@@ -228,7 +228,7 @@ class SiteController extends Controller
         foreach ($allFieldIds as $fieldId) {
             $record = new Data();
             $record->field_id = $fieldId;
-            $record->profile_id = $profile->id;
+            $record->user_id     = $profile->id;
             $record->record_index = $recInd;
 
             $file = $files[$fieldId] ?? null;
@@ -304,7 +304,7 @@ class SiteController extends Controller
             $verifier = FormConfirmPerson::find()->where(['form_id' => $formId])->one();
 
             if ($verifier) {
-                $request->assigned_to = $verifier->profile_id;
+                $request->assigned_to = $verifier->user_id;
                 $request->status = 0;
 
                 if ($request->save()) {
@@ -386,7 +386,7 @@ class SiteController extends Controller
             if (!$record) {
                 $record = new Data();
                 $record->field_id = $fieldId;
-                $record->profile_id = $profile->id;
+                $record->user_id = $profile->id;
             }
 
             $file = $files[$fieldId] ?? null;

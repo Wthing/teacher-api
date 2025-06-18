@@ -6,14 +6,29 @@ use app\models\Form;
 use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\FormFieldAutocomplete;
-use app\models\Profile;
 use Yii;
+use yii\filters\AccessControl;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
 
-class AdminController extends Controller
+class SuperUserController extends Controller
 {
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['admin', 'super-teacher'],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     public function actionIndex()
     {
         $fields = FormField::find()->all();
@@ -55,7 +70,7 @@ class AdminController extends Controller
                     Yii::info($formConfirmPost);
                     $formConfirmPerson = new FormConfirmPerson();
                     $formConfirmPerson->form_id = $form->id;
-                    $formConfirmPerson->profile_id = $formConfirmPost['profile_id'] ?? null;
+                    $formConfirmPerson->user_id = $formConfirmPost['profile_id'] ?? null;
 
                     if (!$formConfirmPerson->save()) {
                         throw new \Exception('Ошибка при сохранении поля: ' . json_encode($formConfirmPerson->errors));

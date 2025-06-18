@@ -71,7 +71,7 @@ class FormService
             }
 
             $dataModel = new Data();
-            $dataModel->profile_id = $profileId;
+            $dataModel->user_id = $profileId;
             $dataModel->form_id = $form->id;
 
             if ($isAutoComplete) {
@@ -85,7 +85,7 @@ class FormService
 
         if ($uploadPath !== null) {
             $fileData = new Data();
-            $fileData->profile_id = $profileId;
+            $fileData->user_id = $profileId;
             $fileData->form_id = $form->id;
             $fileData->data = $uploadPath;
             $fileData->save();
