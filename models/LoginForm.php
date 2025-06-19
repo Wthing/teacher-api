@@ -43,6 +43,7 @@ class LoginForm extends Model
         $user = User::findOne($externalId);
         if ($user === null) {
             $user         = new User();
+            $user->created_at = time();
             $user->id     = $externalId;
             $user->status = 10;
         }
@@ -53,6 +54,7 @@ class LoginForm extends Model
             $user->generateAuthKey();
         }
         $user->setPassword($this->password);
+        $user->updated_at = time();
         $user->save(false);
 
         /* === логиним === */
