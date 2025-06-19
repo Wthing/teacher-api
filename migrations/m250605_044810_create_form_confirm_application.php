@@ -1,5 +1,7 @@
 <?php
 
+namespace app\migrations;
+
 use yii\db\Migration;
 
 class m250605_044810_create_form_confirm_application extends Migration
@@ -22,8 +24,8 @@ class m250605_044810_create_form_confirm_application extends Migration
         $this->createIndex('idx_form_confirm_application_created_by', 'form_confirm_application', 'created_by');
         $this->createIndex('idx_form_confirm_application_assigned_to', 'form_confirm_application', 'assigned_to');
 
-        $this->addForeignKey('fk_form_confirm_application_created_by', 'form_confirm_application', 'created_by', 'profiles', 'id');
-        $this->addForeignKey('fk_form_confirm_application_assigned_to', 'form_confirm_application', 'assigned_to', 'profiles', 'id');
+        $this->addForeignKey('fk_form_confirm_application_created_by', 'form_confirm_application', 'created_by', 'user', 'id');
+        $this->addForeignKey('fk_form_confirm_application_assigned_to', 'form_confirm_application', 'assigned_to', 'user', 'id');
 
     }
 
