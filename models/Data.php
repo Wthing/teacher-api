@@ -17,7 +17,7 @@ use yii\db\ActiveRecord;
  * @property int $verification_status
  *
  * @property Form $forms
- * @property Profile $profiles
+ * @property User $profiles
  */
 class Data extends ActiveRecord
 {
@@ -45,7 +45,7 @@ class Data extends ActiveRecord
             [['user_id', 'field_id'], 'integer'],
             [['data'], 'string'],
             [['field_id'], 'exist', 'skipOnError' => true, 'targetClass' => FormField::class, 'targetAttribute' => ['field_id' => 'id']],
-            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['user_id' => 'id']],
+            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
             [['record_index'], 'integer'],
             [['verification_status'], 'default', 'value' => self::STATUS_PENDING],
         ];
@@ -58,7 +58,7 @@ class Data extends ActiveRecord
     {
         return [
             'id' => Yii::t('app', 'ID'),
-            'user_id' => Yii::t('app', 'Profile ID'),
+            'user_id' => Yii::t('app', 'User ID'),
             'field_id' => Yii::t('app', 'Field ID'),
             'data' => Yii::t('app', 'Data'),
             'verification_status' => Yii::t('app', 'Verification Status'),
@@ -76,13 +76,13 @@ class Data extends ActiveRecord
     }
 
     /**
-     * Gets query for [[Profiles]].
+     * Gets query for [[Users]].
      *
      * @return ActiveQuery
      */
-    public function getProfiles()
+    public function getUsers()
     {
-        return $this->hasOne(Profile::class, ['id' => 'user_id']);
+        return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 
     public function getFormField()
@@ -90,9 +90,9 @@ class Data extends ActiveRecord
         return $this->hasOne(FormField::class, ['id' => 'field_id']);
     }
 
-    public function getProfile()
+    public function getUser()
     {
-        return $this->hasOne(Profile::class, ['id' => 'user_id']);
+        return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 
     public function getFullName()

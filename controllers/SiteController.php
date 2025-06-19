@@ -9,7 +9,7 @@ use app\models\FormConfirmApplication;
 use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\LoginForm;
-use app\models\Profile;
+use app\models\User;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -185,7 +185,7 @@ class SiteController extends Controller
     public function actionCreateFormData()
     {
         $currentUserId = Yii::$app->user->id;
-        $profile = Profile::findOne($currentUserId);
+        $profile = User::findOne($currentUserId);
         $request = Yii::$app->request;
         $recInd = Data::find()->select(['max(record_index)'])->scalar() + 1;
 
@@ -334,7 +334,7 @@ class SiteController extends Controller
     public function actionUpdateFormData()
     {
         $currentUserId = Yii::$app->user->id;
-        $profile = Profile::findOne($currentUserId);
+        $profile = User::findOne($currentUserId);
         $request = Yii::$app->request;
 
         if (!$request->isPost) {

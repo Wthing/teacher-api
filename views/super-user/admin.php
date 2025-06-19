@@ -47,108 +47,108 @@ foreach ($profiles as $profile) {
 
 ?>
 
-<div class="container mt-4">
-    <div class="mb-4">
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#formModalStep1">
-            + Создать новую форму
-        </button>
-        <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#autocompleteModal">
-            + Добавить автозаполнение
-        </button>
-        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#typeModal">
-            + Добавить типы
-        </button>
-    </div>
+    <div class="container mt-4">
+        <div class="mb-4">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#formModalStep1">
+                + Создать новую форму
+            </button>
+            <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#autocompleteModal">
+                + Добавить автозаполнение
+            </button>
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#typeModal">
+                + Добавить типы
+            </button>
 
-    <div class="mb-4">
-        <form method="get">
-            <select id="statusFilter" name="statusFilter" class="form-select" onchange="this.form.submit()">
-                <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>Все формы</option>
-                <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Только активные</option>
-                <option value="disabled" <?= $statusFilter === 'disabled' ? 'selected' : '' ?>>Только отключённые</option>
-            </select>
-        </form>
-    </div>
+        </div>
 
-    <div class="row">
-        <?php foreach ($forms as $form): ?>
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            <?= Html::encode($form->form_name) ?>
-                            <?php if (!$form->status): ?>
-                                <span class="badge bg-secondary">Отключена</span>
+        <div class="mb-4">
+            <form method="get">
+                <select id="statusFilter" name="statusFilter" class="form-select" onchange="this.form.submit()">
+                    <option value="all" <?= $statusFilter === 'all' ? 'selected' : '' ?>>Все формы</option>
+                    <option value="active" <?= $statusFilter === 'active' ? 'selected' : '' ?>>Только активные</option>
+                    <option value="disabled" <?= $statusFilter === 'disabled' ? 'selected' : '' ?>>Только отключённые</option>
+                </select>
+            </form>
+        </div>
+
+        <div class="row">
+            <?php foreach ($forms as $form): ?>
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <?= Html::encode($form->form_name) ?>
+                                <?php if (!$form->status): ?>
+                                    <span class="badge bg-secondary">Отключена</span>
+                                <?php endif; ?>
+                            </h5>
+
+                            <button type="button" class="btn btn-primary toggle-form-btn"
+                                    data-bs-toggle="modal" data-bs-target="#exampleModal"
+                                    data-form="<?= $form->id ?>" <?= !$form->status ? 'disabled' : '' ?>>
+                                Открыть
+                            </button>
+
+                            <?php if ($form->status): ?>
+                                <button type="button"
+                                        class="btn btn-danger btn-sm delete-form-btn"
+                                        data-form-id="<?= $form->id ?>">
+                                    Отключить
+                                </button>
+                            <?php else: ?>
+                                <button type="button"
+                                        class="btn btn-success btn-sm restore-form-btn"
+                                        data-form-id="<?= $form->id ?>">
+                                    Восстановить
+                                </button>
                             <?php endif; ?>
-                        </h5>
+                        </div>
 
-                        <button type="button" class="btn btn-primary toggle-form-btn"
-                                data-bs-toggle="modal" data-bs-target="#exampleModal"
-                                data-form="<?= $form->id ?>" <?= !$form->status ? 'disabled' : '' ?>>
-                            Открыть
-                        </button>
-
-                        <?php if ($form->status): ?>
-                            <button type="button"
-                                    class="btn btn-danger btn-sm delete-form-btn"
-                                    data-form-id="<?= $form->id ?>">
-                                Отключить
-                            </button>
-                        <?php else: ?>
-                            <button type="button"
-                                    class="btn btn-success btn-sm restore-form-btn"
-                                    data-form-id="<?= $form->id ?>">
-                                Восстановить
-                            </button>
-                        <?php endif; ?>
                     </div>
-
                 </div>
-            </div>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
+        </div>
     </div>
-</div>
 
-<?php echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']); ?>
-
+<?php echo Html::beginForm(Url::to(['super-user/create']), 'post', ['id' => 'mainForm']); ?>
 
 <?php Modal::begin([
     'id' => 'formModalStep1',
     'title' => 'Создание формы — шаг 1',
 ]); ?>
 
-<div>
-    <div class="mb-3">
-        <?= Html::label('Название формы', 'form-name', ['class' => 'form-label']) ?>
-        <?= Html::textInput('Form[form_name]', '', [
-            'class' => 'form-control',
-            'required' => true,
-            'id' => 'form-name',
-            'placeholder' => 'Например: Обратная связь'
-        ]) ?>
-        <div class="form-check form-switch">
-            <?= Html::checkbox('Form[requires_verification]', false, [
-                'class' => 'form-check-input',
-                'id' => 'requires-verification',
+    <div>
+        <div class="mb-3">
+            <?= Html::label('Название формы', 'form-name', ['class' => 'form-label']) ?>
+            <?= Html::textInput('Form[form_name]', '', [
+                'class' => 'form-control',
+                'required' => true,
+                'id' => 'form-name',
+                'placeholder' => 'Например: Обратная связь'
             ]) ?>
-            <?= Html::label('Нужно подтверждение', 'requires-verification', ['class' => 'form-check-label']) ?>
+            <div class="form-check form-switch">
+                <?= Html::checkbox('Form[requires_verification]', false, [
+                    'class' => 'form-check-input',
+                    'id' => 'requires-verification',
+                ]) ?>
+                <?= Html::label('Нужно подтверждение', 'requires-verification', ['class' => 'form-check-label']) ?>
+            </div>
+            <?= Html::label('Профиль формы', 'user-id', ['class' => 'form-label']) ?>
+            <select name="FormConfirmPerson[user_id]" id="user-id" class="form-select" required>
+                <option value="">Выберите профиль</option>
+                <?= $profileOptions ?>
+            </select>
+
+
         </div>
-        <?= Html::label('Профиль формы', 'profile-id', ['class' => 'form-label']) ?>
-        <select name="FormConfirmPerson[profile_id]" id="profile-id" class="form-select" required>
-            <option value="">Выберите профиль</option>
-            <?= $profileOptions ?>
-        </select>
-
-
+        <div class="text-end">
+            <button type="button"
+                    class="btn btn-primary"
+                    data-bs-target="#formModalStep2"
+                    data-bs-toggle="modal"
+                    data-bs-dismiss="modal">Далее</button>
+        </div>
     </div>
-    <div class="text-end">
-        <button type="button"
-                class="btn btn-primary"
-                data-bs-target="#formModalStep2"
-                data-bs-toggle="modal"
-                data-bs-dismiss="modal">Далее</button>
-    </div>
-</div>
 
 <?php Modal::end(); ?>
 
@@ -157,35 +157,35 @@ foreach ($profiles as $profile) {
     'title' => 'Создание формы — шаг 2',
 ]); ?>
 
-<div id="fieldContainer">
-    <div id="fieldInputs" class="mb-3"></div>
+    <div id="fieldContainer">
+        <div id="fieldInputs" class="mb-3"></div>
 
-    <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addField">
-        + Добавить поле
-    </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addField">
+            + Добавить поле
+        </button>
 
-    <div class="text-end">
-        <button type="submit" class="btn btn-success">Сохранить форму</button>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Сохранить форму</button>
+        </div>
     </div>
-</div>
 
 <?php Modal::end(); ?>
 
-<!-- Modal для просмотра формы -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">...</div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+    <!-- Modal для просмотра формы -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">...</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <?php echo Html::endForm(); ?>
 
@@ -194,47 +194,47 @@ foreach ($profiles as $profile) {
     'title' => 'Добавить новые типы полей',
 ]); ?>
 
-<form id="typeForm" method="post" action="<?= Url::to(['super-user/create-types']) ?>">
-    <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
+    <form id="typeForm" method="post" action="<?= Url::to(['super-user/create-types']) ?>">
+        <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
 
-    <div id="typeFieldsContainer">
-        <div class="type-entry mb-3 d-flex gap-2 align-items-start">
-            <input type="text" name="FormFieldTypes[0][type_name]" class="form-control" placeholder="Название типа" required maxlength="255">
-            <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+        <div id="typeFieldsContainer">
+            <div class="type-entry mb-3 d-flex gap-2 align-items-start">
+                <input type="text" name="FormFieldTypes[0][type_name]" class="form-control" placeholder="Название типа" required maxlength="255">
+                <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+            </div>
         </div>
-    </div>
 
-    <button type="button" id="addTypeEntry" class="btn btn-outline-secondary btn-sm mb-3">+ Добавить ещё</button>
+        <button type="button" id="addTypeEntry" class="btn btn-outline-secondary btn-sm mb-3">+ Добавить ещё</button>
 
-    <div class="text-end">
-        <button type="submit" class="btn btn-success">Сохранить</button>
-    </div>
-</form>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Сохранить</button>
+        </div>
+    </form>
 
-<script>
-    (function(){
-        let index = 1;
+    <script>
+        (function(){
+            let index = 1;
 
-        document.getElementById('addTypeEntry').addEventListener('click', function(){
-            const container = document.getElementById('typeFieldsContainer');
+            document.getElementById('addTypeEntry').addEventListener('click', function(){
+                const container = document.getElementById('typeFieldsContainer');
 
-            const entry = document.createElement('div');
-            entry.classList.add('type-entry', 'mb-3', 'd-flex', 'gap-2', 'align-items-start');
-            entry.innerHTML = `
+                const entry = document.createElement('div');
+                entry.classList.add('type-entry', 'mb-3', 'd-flex', 'gap-2', 'align-items-start');
+                entry.innerHTML = `
             <input type="text" name="FormFieldTypes[\${index}][type_name]" class="form-control" placeholder="Название типа" required maxlength="255">
             <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
         `;
-            container.appendChild(entry);
-            index++;
-        });
+                container.appendChild(entry);
+                index++;
+            });
 
-        document.getElementById('typeFieldsContainer').addEventListener('click', function(e){
-            if(e.target && e.target.classList.contains('remove-entry-btn')){
-                e.target.closest('.type-entry').remove();
-            }
-        });
-    })();
-</script>
+            document.getElementById('typeFieldsContainer').addEventListener('click', function(e){
+                if(e.target && e.target.classList.contains('remove-entry-btn')){
+                    e.target.closest('.type-entry').remove();
+                }
+            });
+        })();
+    </script>
 
 <?php Modal::end(); ?>
 
@@ -243,40 +243,40 @@ foreach ($profiles as $profile) {
     'title' => 'Добавить запись автокомплита',
 ]); ?>
 
-<form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin/create-autocomplete']) ?>">
-    <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
+    <form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['super-user/create-autocomplete']) ?>">
+        <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
 
-    <div id="autocompleteFieldsContainer">
-        <div class="autocomplete-entry mb-3 d-flex gap-2 align-items-start">
-            <select name="FormFieldAutocompleteEntries[0][field_id]" class="form-select" required>
-                <option value="">Выберите поле</option>
-                <?= $optionsFields ?>
-            </select>
+        <div id="autocompleteFieldsContainer">
+            <div class="autocomplete-entry mb-3 d-flex gap-2 align-items-start">
+                <select name="FormFieldAutocompleteEntries[0][field_id]" class="form-select" required>
+                    <option value="">Выберите поле</option>
+                    <?= $optionsFields ?>
+                </select>
 
-            <input type="text" name="FormFieldAutocompleteEntries[0][content]" class="form-control" placeholder="Контент автозаполнения" required maxlength="255">
+                <input type="text" name="FormFieldAutocompleteEntries[0][content]" class="form-control" placeholder="Контент автозаполнения" required maxlength="255">
 
-            <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+                <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+            </div>
         </div>
-    </div>
 
-    <button type="button" id="addAutocompleteEntry" class="btn btn-outline-secondary btn-sm mb-3">+ Добавить еще</button>
+        <button type="button" id="addAutocompleteEntry" class="btn btn-outline-secondary btn-sm mb-3">+ Добавить еще</button>
 
-    <div class="text-end">
-        <button type="submit" class="btn btn-success">Сохранить все</button>
-    </div>
-</form>
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Сохранить все</button>
+        </div>
+    </form>
 
-<script>
-    (function(){
-        let index = 1;
+    <script>
+        (function(){
+            let index = 1;
 
-        document.getElementById('addAutocompleteEntry').addEventListener('click', function(){
-            const container = document.getElementById('autocompleteFieldsContainer');
+            document.getElementById('addAutocompleteEntry').addEventListener('click', function(){
+                const container = document.getElementById('autocompleteFieldsContainer');
 
-            const entry = document.createElement('div');
-            entry.classList.add('autocomplete-entry', 'mb-3', 'd-flex', 'gap-2', 'align-items-start');
+                const entry = document.createElement('div');
+                entry.classList.add('autocomplete-entry', 'mb-3', 'd-flex', 'gap-2', 'align-items-start');
 
-            entry.innerHTML = `
+                entry.innerHTML = `
                 <select name="FormFieldAutocompleteEntries[${index}][field_id]" class="form-select" required>
                     <option value="">Выберите поле</option>
                     <?= addslashes($optionsFields) ?>
@@ -287,18 +287,18 @@ foreach ($profiles as $profile) {
                 <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
             `;
 
-            container.appendChild(entry);
+                container.appendChild(entry);
 
-            index++;
-        });
+                index++;
+            });
 
-        document.getElementById('autocompleteFieldsContainer').addEventListener('click', function(e){
-            if(e.target && e.target.classList.contains('remove-entry-btn')){
-                e.target.closest('.autocomplete-entry').remove();
-            }
-        });
-    })();
-</script>
+            document.getElementById('autocompleteFieldsContainer').addEventListener('click', function(e){
+                if(e.target && e.target.classList.contains('remove-entry-btn')){
+                    e.target.closest('.autocomplete-entry').remove();
+                }
+            });
+        })();
+    </script>
 
 
 
@@ -333,7 +333,7 @@ $('.toggle-form-btn').on('click', function () {
     modalBody.html('<p>Загрузка...</p>');
 
     $.ajax({
-        url: '/admin/fetch-fields-by-form-id',
+        url: '/super-user/fetch-fields-by-form-id',
         method: 'GET',
         data: { id: formId },
         success: function (response) {
@@ -375,7 +375,7 @@ $('.delete-form-btn').on('click', function () {
     }
 
     $.ajax({
-        url: '/admin/delete-form',
+        url: '/super-user/delete-form',
         type: 'POST',
         data: {
             id: formId,
@@ -408,7 +408,7 @@ $('.restore-form-btn').on('click', function () {
     }
 
     $.ajax({
-        url: '/admin/restore-form',
+        url: '/super-user/restore-form',
         type: 'POST',
         data: {
             id: formId,

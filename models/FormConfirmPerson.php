@@ -12,7 +12,7 @@ use yii\db\ActiveRecord;
  * @property int $user_id
  * @property int $form_id
  *
- * @property Profile $profile
+ * @property User $profile
  * @property Form $form
  */
 class FormConfirmPerson extends ActiveRecord
@@ -27,7 +27,7 @@ class FormConfirmPerson extends ActiveRecord
         return [
             [['user_id', 'form_id'], 'required'],
             [['user_id', 'form_id'], 'integer'],
-            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => Profile::class, 'targetAttribute' => ['user_id' => 'id']],
+            [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
             [['form_id'], 'exist', 'skipOnError' => true, 'targetClass' => Form::class, 'targetAttribute' => ['form_id' => 'id']],
         ];
     }
@@ -41,9 +41,9 @@ class FormConfirmPerson extends ActiveRecord
         ];
     }
 
-    public function getProfile()
+    public function getUser()
     {
-        return $this->hasOne(Profile::class, ['id' => 'user_id']);
+        return $this->hasOne(User::class, ['id' => 'user_id']);
     }
 
     public function getForm()

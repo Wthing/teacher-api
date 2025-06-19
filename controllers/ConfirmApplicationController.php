@@ -55,7 +55,7 @@ class ConfirmApplicationController extends Controller
 
         $records = Data::find()->where(['record_index' => $model->record_index])->all();
         $ff = FormField::findOne($records[0]->field_id);
-        $assignees = FormConfirmPerson::find()->select('profile_id')->where(['form_id' => $ff->form_id])->column();
+        $assignees = FormConfirmPerson::find()->select('user_id')->where(['form_id' => $ff->form_id])->column();
         Yii::info($assignees);
 
         if (in_array($userId, $assignees)) {
@@ -85,7 +85,7 @@ class ConfirmApplicationController extends Controller
 
         $records = Data::find()->where(['record_index' => $model->record_index])->all();
         $ff = FormField::findOne($records[0]->field_id);
-        $assignees = FormConfirmPerson::find()->select('profile_id')->where(['form_id' => $ff->form_id])->column();
+        $assignees = FormConfirmPerson::find()->select('user_id')->where(['form_id' => $ff->form_id])->column();
 
         if (in_array($userId, $assignees)) {
             $model->reject();

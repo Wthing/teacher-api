@@ -71,7 +71,7 @@ class SuperUserController extends Controller
                     Yii::info($formConfirmPost);
                     $formConfirmPerson = new FormConfirmPerson();
                     $formConfirmPerson->form_id = $form->id;
-                    $formConfirmPerson->user_id = $formConfirmPost['profile_id'] ?? null;
+                    $formConfirmPerson->user_id = $formConfirmPost['user_id'] ?? null;
 
                     if (!$formConfirmPerson->save()) {
                         throw new \Exception('Ошибка при сохранении поля: ' . json_encode($formConfirmPerson->errors));
@@ -87,7 +87,7 @@ class SuperUserController extends Controller
             }
         }
 
-        return $this->render('admin', [
+        return $this->render('super-user/admin', [
             'form' => $form,
         ]);
     }
@@ -192,30 +192,35 @@ class SuperUserController extends Controller
 
             return $this->redirect(['super-user/index']);
         }
-        throw new BadRequestHttpException('Неверный запрос.');
 
+        throw new BadRequestHttpException('Неверный запрос.');
     }
 
     public function actionCreateTypes()
     {
         $request = Yii::$app->request;
+
         if ($request->isPost) {
             $entries = $request->post('FormFieldTypes', []);
             $successCount = 0;
             $errors = [];
+
             foreach ($entries as $i => $data) {
                 $model = new FormFieldType();
                 $model->type_name = $data['type_name'] ?? null;
                 $model->status = 0;
+
                 if ($model->validate() && $model->save()) {
                     $successCount++;
                 } else {
                     $errors[$i] = $model->errors;
                 }
             }
+
             if ($successCount > 0) {
                 Yii::$app->session->setFlash('success', "Успешно добавлено {$successCount} новых типа(ов).");
             }
+
             if (!empty($errors)) {
                 Yii::$app->session->setFlash('error', "Некоторые типы не были сохранены: " . json_encode($errors));
             }
