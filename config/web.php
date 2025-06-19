@@ -44,7 +44,7 @@ $config = [
 
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
-            'defaultRoles' => ['admin', 'super-teacher'],
+//            'defaultRoles' => ['admin', 'super-teacher'],
         ],
         'as access' => [
             'class' => 'mdm\admin\components\AccessControl',

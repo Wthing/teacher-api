@@ -23,7 +23,11 @@ class SuperUserController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'roles' => ['admin', 'super-teacher'],
+                        'roles' => ['@'],
+                    ],
+                    [
+                        'allow' => true,
+                        'roles' => ['super-teacher'],
                     ],
                 ],
             ],
