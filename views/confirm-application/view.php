@@ -19,8 +19,8 @@ function isValidUrl($url) {
 
 <h1><?= Html::encode($this->title) ?></h1>
 
-<p><strong>Создал:</strong> <?= Html::encode($model->creator->login ?? '-') ?></p>
-<p><strong>Назначен:</strong> <?= Html::encode($model->assignee->login ?? '-') ?></p>
+<p><strong>Создал:</strong> <?= Html::encode($model->creator->username ?? '-') ?></p>
+<p><strong>Назначен:</strong> <?= Html::encode($model->assignee->username ?? '-') ?></p>
 <p><strong>Статус:</strong> <?= Html::encode($model->getStatusLabel()) ?></p>
 <p><strong>Дата создания:</strong> <?= Yii::$app->formatter->asDatetime($model->created_at) ?></p>
 

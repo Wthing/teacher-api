@@ -26,8 +26,8 @@ $this->title = 'Заявки на подтверждение';
     <?php foreach ($applications as $application): ?>
         <tr>
             <td><?= $application->id ?></td>
-            <td><?= $application->creator->login ?? 'Неизвестно' ?></td>
-            <td><?= $application->assignee->login ?? 'Неизвестно' ?></td>
+            <td><?= $application->creator->username ?? 'Неизвестно' ?></td>
+            <td><?= $application->assignee->username ?? 'Неизвестно' ?></td>
             <td><?= date('Y-m-d H:i:s', $application->created_at) ?></td>
             <td><?= date('Y-m-d H:i:s', $application->confirmed_at) ?></td>
             <td><?= $application->getStatusLabel() ?></td>
