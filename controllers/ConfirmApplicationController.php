@@ -8,11 +8,27 @@ use app\models\FormConfirmApplication;
 use app\models\FormConfirmPerson;
 use app\models\FormField;
 use Yii;
+use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
 class ConfirmApplicationController extends Controller
 {
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['@'],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     public function actionIndex()
     {
         $applications = FormConfirmApplication::find()->orderBy(['created_at' => SORT_DESC])->all();
