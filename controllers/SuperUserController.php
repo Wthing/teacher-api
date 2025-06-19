@@ -6,6 +6,7 @@ use app\models\Form;
 use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\FormFieldAutocomplete;
+use app\models\FormFieldType;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\BadRequestHttpException;
@@ -194,4 +195,40 @@ class SuperUserController extends Controller
 
         throw new BadRequestHttpException('Неверный запрос.');
     }
+
+    public function actionCreateTypes()
+    {
+        $request = Yii::$app->request;
+
+        if ($request->isPost) {
+            $entries = $request->post('FormFieldTypes', []);
+            $successCount = 0;
+            $errors = [];
+
+            foreach ($entries as $i => $data) {
+                $model = new FormFieldType();
+                $model->type_name = $data['type_name'] ?? null;
+                $model->status = $data['status'] ?? 0;
+
+                if ($model->validate() && $model->save()) {
+                    $successCount++;
+                } else {
+                    $errors[$i] = $model->errors;
+                }
+            }
+
+            if ($successCount > 0) {
+                Yii::$app->session->setFlash('success', "Успешно добавлено {$successCount} новых типа(ов).");
+            }
+
+            if (!empty($errors)) {
+                Yii::$app->session->setFlash('error', "Некоторые типы не были сохранены: " . json_encode($errors));
+            }
+
+            return $this->redirect(['index']);
+        }
+
+        throw new \yii\web\BadRequestHttpException('Неверный запрос.');
+    }
+
 }
