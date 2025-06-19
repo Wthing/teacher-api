@@ -376,10 +376,10 @@ class SiteController extends Controller
             $recordId = $recordIds[$fieldId] ?? null;
 
             if ($recordId) {
-                $record = Data::findOne(['id' => $recordId, 'profile_id' => $profile->id]);
+                $record = Data::findOne(['id' => $recordId, 'user_id' => $profile->id]);
             } else {
                 $record = Data::find()
-                    ->where(['field_id' => $fieldId, 'profile_id' => $profile->id])
+                    ->where(['field_id' => $fieldId, 'user_id' => $profile->id])
                     ->one();
             }
 
@@ -478,7 +478,7 @@ class SiteController extends Controller
         $userData = Data::find()
             ->joinWith('formField')
             ->where(['data.form_id' => $form_id])
-            ->andWhere(['data.profile_id' => 1])
+            ->andWhere(['data.user_id' => 1])
             ->all();
 
         return $this->render('view-form-data', [
