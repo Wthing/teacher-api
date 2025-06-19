@@ -55,7 +55,9 @@ foreach ($profiles as $profile) {
         <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#autocompleteModal">
             + Добавить автозаполнение
         </button>
-
+        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#typeModal">
+            + Добавить типы
+        </button>
     </div>
 
     <div class="mb-4">
@@ -186,6 +188,55 @@ foreach ($profiles as $profile) {
 </div>
 
 <?php echo Html::endForm(); ?>
+
+<?php Modal::begin([
+    'id' => 'typeModal',
+    'title' => 'Добавить новые типы полей',
+]); ?>
+
+<form id="typeForm" method="post" action="<?= Url::to(['super-user/create-types']) ?>">
+    <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
+
+    <div id="typeFieldsContainer">
+        <div class="type-entry mb-3 d-flex gap-2 align-items-start">
+            <input type="text" name="FormFieldTypes[0][type_name]" class="form-control" placeholder="Название типа" required maxlength="255">
+            <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+        </div>
+    </div>
+
+    <button type="button" id="addTypeEntry" class="btn btn-outline-secondary btn-sm mb-3">+ Добавить ещё</button>
+
+    <div class="text-end">
+        <button type="submit" class="btn btn-success">Сохранить</button>
+    </div>
+</form>
+
+<script>
+    (function(){
+        let index = 1;
+
+        document.getElementById('addTypeEntry').addEventListener('click', function(){
+            const container = document.getElementById('typeFieldsContainer');
+
+            const entry = document.createElement('div');
+            entry.classList.add('type-entry', 'mb-3', 'd-flex', 'gap-2', 'align-items-start');
+            entry.innerHTML = `
+            <input type="text" name="FormFieldTypes[\${index}][type_name]" class="form-control" placeholder="Название типа" required maxlength="255">
+            <button type="button" class="btn btn-danger btn-sm remove-entry-btn" title="Удалить">×</button>
+        `;
+            container.appendChild(entry);
+            index++;
+        });
+
+        document.getElementById('typeFieldsContainer').addEventListener('click', function(e){
+            if(e.target && e.target.classList.contains('remove-entry-btn')){
+                e.target.closest('.type-entry').remove();
+            }
+        });
+    })();
+</script>
+
+<?php Modal::end(); ?>
 
 <?php Modal::begin([
     'id' => 'autocompleteModal',
