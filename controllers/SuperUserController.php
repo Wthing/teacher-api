@@ -71,7 +71,7 @@ class SuperUserController extends Controller
                     Yii::info($formConfirmPost);
                     $formConfirmPerson = new FormConfirmPerson();
                     $formConfirmPerson->form_id = $form->id;
-                    $formConfirmPerson->user_id = $formConfirmPost['profile_id'] ?? null;
+                    $formConfirmPerson->user_id = $formConfirmPost['user_id'] ?? null;
 
                     if (!$formConfirmPerson->save()) {
                         throw new \Exception('Ошибка при сохранении поля: ' . json_encode($formConfirmPerson->errors));
@@ -87,7 +87,7 @@ class SuperUserController extends Controller
             }
         }
 
-        return $this->render('admin', [
+        return $this->render('super-user/admin', [
             'form' => $form,
         ]);
     }

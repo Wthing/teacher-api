@@ -3,7 +3,7 @@
 use app\models\Form;
 use app\models\FormField;
 use app\models\FormFieldType;
-use app\models\Profile;
+use app\models\User;
 use yii\bootstrap5\Modal;
 use yii\helpers\Html;
 use yii\helpers\Url;
@@ -38,10 +38,10 @@ foreach ($formFields as $ff) {
     $optionsFields .= "<option value=\"{$ff->id}\">" . Html::encode($ff->field_name) . "</option>";
 }
 
-$profiles = Profile::find()->all();
+$profiles = User::find()->all();
 $profileOptions = '';
 foreach ($profiles as $profile) {
-    $profileOptions .= "<option value=\"{$profile->id}\">" . Html::encode($profile->login) . "</option>";
+    $profileOptions .= "<option value=\"{$profile->id}\">" . Html::encode($profile->username) . "</option>";
     Yii::info($profileOptions);
 }
 
@@ -110,7 +110,7 @@ foreach ($profiles as $profile) {
     </div>
 </div>
 
-<?php echo Html::beginForm(Url::to(['admin/create']), 'post', ['id' => 'mainForm']); ?>
+<?php echo Html::beginForm(Url::to(['super-user/create']), 'post', ['id' => 'mainForm']); ?>
 
 <?php Modal::begin([
     'id' => 'formModalStep1',
@@ -133,8 +133,8 @@ foreach ($profiles as $profile) {
             ]) ?>
             <?= Html::label('Нужно подтверждение', 'requires-verification', ['class' => 'form-check-label']) ?>
         </div>
-        <?= Html::label('Профиль формы', 'profile-id', ['class' => 'form-label']) ?>
-        <select name="FormConfirmPerson[profile_id]" id="profile-id" class="form-select" required>
+        <?= Html::label('Профиль формы', 'user-id', ['class' => 'form-label']) ?>
+        <select name="FormConfirmPerson[user_id]" id="user-id" class="form-select" required>
             <option value="">Выберите профиль</option>
             <?= $profileOptions ?>
         </select>
@@ -243,7 +243,7 @@ foreach ($profiles as $profile) {
     'title' => 'Добавить запись автокомплита',
 ]); ?>
 
-<form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['admin/create-autocomplete']) ?>">
+<form id="autocompleteForm" method="post" action="<?= \yii\helpers\Url::to(['super-user/create-autocomplete']) ?>">
     <?= Html::hiddenInput(Yii::$app->request->csrfParam, Yii::$app->request->csrfToken) ?>
 
     <div id="autocompleteFieldsContainer">
@@ -333,7 +333,7 @@ $('.toggle-form-btn').on('click', function () {
     modalBody.html('<p>Загрузка...</p>');
 
     $.ajax({
-        url: '/admin/fetch-fields-by-form-id',
+        url: '/super-user/fetch-fields-by-form-id',
         method: 'GET',
         data: { id: formId },
         success: function (response) {
@@ -375,7 +375,7 @@ $('.delete-form-btn').on('click', function () {
     }
 
     $.ajax({
-        url: '/admin/delete-form',
+        url: '/super-user/delete-form',
         type: 'POST',
         data: {
             id: formId,
@@ -408,7 +408,7 @@ $('.restore-form-btn').on('click', function () {
     }
 
     $.ajax({
-        url: '/admin/restore-form',
+        url: '/super-user/restore-form',
         type: 'POST',
         data: {
             id: formId,
