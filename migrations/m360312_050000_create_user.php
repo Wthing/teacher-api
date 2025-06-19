@@ -5,7 +5,7 @@ namespace app\migrations;
 use yii\db\Migration;
 use mdm\admin\components\Configs;
 
-class m160312_050000_create_user extends Migration
+class m360312_050000_create_user extends Migration
 {
 
     public function up()
