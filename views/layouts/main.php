@@ -23,11 +23,16 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
     <!DOCTYPE html>
     <html lang="<?= Yii::$app->language ?>" class="h-100">
     <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+
         <title><?= Html::encode($this->title) ?></title>
         <?php $this->head() ?>
         <?= Html::csrfMetaTags() ?>
 
     </head>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
     <body class="d-flex flex-column h-100">
     <?php $this->beginBody() ?>
 

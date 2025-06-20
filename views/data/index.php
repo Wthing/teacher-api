@@ -22,6 +22,14 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 
 ?>
 
+<head>
+    <!-- MDB CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <title>Профиль</title>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
 <div class="data-search">
 
     <div class="container mb-4">
