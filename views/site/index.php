@@ -1,5 +1,6 @@
 <?php
 
+
 /** @var yii\web\View $this */
 /** @var DataSearch $searchModel */
 /** @var Form[] $forms */
@@ -22,7 +23,16 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 
 $this->title = 'My Yii Application';
 ?>
+<head>
+    <!-- MDB CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <title>Главная</title>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
 <div class="site-index">
+
     <div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
         <div class="data-search" style="width: 100%; max-width: 1200px;">
             <div class="bg-blue-500 text-black text-center p-4 rounded-lg">
@@ -40,7 +50,7 @@ $this->title = 'My Yii Application';
                         <?= $form->field($searchModel, 'form_id')
                             ->dropDownList($availableForms, [
                                 'prompt' => 'Выберите форму',
-                                'class' => 'form-select'
+                                'class' => 'form-select rounded-pill'
                             ])
                             ->label(false) ?>
                     </div>
@@ -50,7 +60,7 @@ $this->title = 'My Yii Application';
                         <?= $form->field($searchModel, 'value')
                             ->textInput([
                                 'placeholder' => 'Введите значение',
-                                'class' => 'form-control'
+                                'class' => 'form-control rounded-pill'
                             ])
                             ->label(false) ?>
                     </div>
@@ -58,8 +68,16 @@ $this->title = 'My Yii Application';
 
                 <!-- Кнопки по центру -->
                 <div class="text-center mt-4">
-                    <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary me-3']) ?>
-                    <?= Html::a('Очистить', ['data/search'], ['class' => 'btn btn-warning']) ?>
+                    <?= Html::submitButton('Поиск', [
+                        'class' => 'btn btn-primary',
+                        'data-mdb-ripple-init' => true
+                    ]) ?>
+
+                    <?= Html::a('Очистить', ['data/search'], [
+                        'class' => 'btn btn-secondary',
+                        'data-mdb-ripple-init' => true,
+                        'data-mdb-ripple-color' => 'light'
+                    ]) ?>
                 </div>
 
                 <?php ActiveForm::end(); ?>
@@ -67,6 +85,5 @@ $this->title = 'My Yii Application';
         </div>
     </div>
 </div>
-
 
 

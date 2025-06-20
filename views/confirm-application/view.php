@@ -1,142 +1,157 @@
 <?php
+/**  @var yii\web\View                     $this
+ *   @var app\models\FormConfirmApplication $model
+ *   @var app\models\Form[]                $forms
+ *   @var array                            $userData
+ */
 
-use app\models\Form;
 use yii\helpers\Html;
-use yii\helpers\Json;
-
-/** @var yii\web\View $this */
-/** @var app\models\FormConfirmApplication $model */
-/** @var Form[] $forms */
-/** @var array $userData */
 
 $this->title = "Заявка №{$model->id}";
 
-function isValidUrl($url) {
-    return filter_var($url, FILTER_VALIDATE_URL) !== false;
-}
-
+/* — mini‑helper — */
+$isUrl = fn($v) => is_string($v) && filter_var($v, FILTER_VALIDATE_URL);
+$fmt   = Yii::$app->formatter;
 ?>
 
-<h1><?= Html::encode($this->title) ?></h1>
+<head>
+    <!-- MDB CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <title>Профиль</title>
+</head>
 
-<p><strong>Создал:</strong> <?= Html::encode($model->creator->login ?? '-') ?></p>
-<p><strong>Назначен:</strong> <?= Html::encode($model->assignee->login ?? '-') ?></p>
-<p><strong>Статус:</strong> <?= Html::encode($model->getStatusLabel()) ?></p>
-<p><strong>Дата создания:</strong> <?= Yii::$app->formatter->asDatetime($model->created_at) ?></p>
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
 
-<div>
-    <?= Html::a('Назад к списку', ['index'], ['class' => 'btn btn-secondary']) ?>
+<div class="container py-4">
 
-    <?php if ($model->status == $model::STATUS_PENDING): ?>
-        <?= Html::a('Подтвердить', ['confirm', 'id' => $model->id], [
-            'class' => 'btn btn-success',
-            'data-method' => 'post',
-            'data-confirm' => 'Вы уверены, что хотите подтвердить эту заявку?',
-        ]) ?>
-        <?= Html::a('Отклонить', ['reject', 'id' => $model->id], [
-            'class' => 'btn btn-danger',
-            'data-method' => 'post',
-            'data-confirm' => 'Вы уверены, что хотите отклонить эту заявку?',
-        ]) ?>
-    <?php endif; ?>
-</div>
+    <!-- ===== Card‑шапка заявки ===== -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
 
-<div class="container mt-3">
-    <?php foreach ($forms as $form): ?>
-        <?php
-        $formFields = $form->formFields;
-        $fieldDataMap = [];
+            <div>
+                <h2 class="mb-2">Заявка №<?= $model->id ?></h2>
 
-        foreach ($formFields as $field) {
-            $fieldDataMap[$field->id] = $userData[$field->id] ?? [];
-        }
+                <span class="text-muted small me-2">
+                    Создал: <strong><?= Html::encode($model->creator->username ?? '—') ?></strong>
+                </span>
+                <span class="text-muted small">
+                    Назначен: <strong><?= Html::encode($model->assignee->username ?? '—') ?></strong>
+                </span>
+            </div>
 
-        // Максимальное количество строк в текущем наборе данных
-        $maxCount = 0;
-        foreach ($fieldDataMap as $dataRows) {
-            $maxCount = max($maxCount, count($dataRows));
-        }
+            <!-- Статус в виде яркой «badgy» -->
+            <?php
+            $badgeClass = [
+                $model::STATUS_PENDING   => 'bg-warning text-dark',
+                $model::STATUS_CONFIRMED  => 'bg-success',
+                $model::STATUS_REJECTED  => 'bg-danger',
+            ][$model->status] ?? 'bg-secondary';
+            ?>
+            <span class="badge <?= $badgeClass ?> py-2 px-3 fs-6">
+                <?= Html::encode($model->getStatusLabel()) ?>
+            </span>
+        </div>
 
-        // Если данных нет ни в одном поле формы, не отображаем таблицу
-        if ($maxCount === 0) {
-            continue;
-        }
+        <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <small class="text-muted">
+                Дата создания: <?= $fmt->asDatetime($model->created_at) ?>
+            </small>
+
+            <div class="btn-group">
+                <?= Html::a('↩︎ К списку', ['index'], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
+
+                <?php if ($model->status === $model::STATUS_PENDING): ?>
+                    <?= Html::a('✅ Подтвердить', ['confirm', 'id' => $model->id], [
+                        'class' => 'btn btn-success btn-sm',
+                        'data-method'  => 'post',
+                        'data-confirm' => 'Подтвердить заявку?'
+                    ]) ?>
+                    <?= Html::a('❌ Отклонить', ['reject', 'id' => $model->id], [
+                        'class' => 'btn btn-danger btn-sm',
+                        'data-method'  => 'post',
+                        'data-confirm' => 'Отклонить заявку?'
+                    ]) ?>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Данные по формам ===== -->
+    <?php foreach ($forms as $form):
+
+        // Подготовка данных
+        $formFields   = $form->formFields;
+        $fieldDataMap = array_map(
+            fn($f) => $userData[$f->id] ?? [],
+            $formFields
+        );
+        $maxRows = max(array_map('count', $fieldDataMap));
+
+        if (!$maxRows) { continue; }
+
         ?>
+        <div class="card border-0 shadow-sm mb-5">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><?= Html::encode($form->form_name) ?></h5>
+            </div>
 
-        <div class="table-responsive mb-4">
-            <h4><?= Html::encode($form->form_name) ?></h4>
-            <table class="table table-bordered table-hover align-middle">
-                <thead class="table-light">
-                <tr>
-                    <?php foreach ($formFields as $field): ?>
-                        <th><?= Html::encode($field->field_name) ?></th>
-                    <?php endforeach; ?>
-                </tr>
-                </thead>
-                <tbody>
-                <?php for ($i = 0; $i < $maxCount; $i++): ?>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light">
                     <tr>
                         <?php foreach ($formFields as $field): ?>
-                            <?php
-                            $fieldId = $field->id;
-                            $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
-                            $displayValue = '';
-
-                            if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                                $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
-                                $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-
-                                if (in_array($ext, $imageExtensions)) {
-                                    $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                                    $displayValue = Html::img($url, [
-                                        'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                        'alt' => basename($value),
-                                        'class' => 'img-thumbnail'
-                                    ]);
-                                } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
-                                    $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
-                                    $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
-                                    $documentUrl = '/' . ltrim($value, '/');
-
-                                    $displayValue = Html::a(
-                                        Html::img($previewUrl, [
-                                            'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                            'alt' => basename($value),
-                                            'class' => 'img-thumbnail',
-                                        ]),
-                                        $documentUrl,
-                                        [
-                                            'target' => '_blank',
-                                            'title' => 'Открыть документ: ' . basename($value),
-                                        ]
-                                    );
-                                } else {
-                                    $displayValue = Html::a(
-                                        basename($value),
-                                        '/' . ltrim($value, '/'), // <-- абсолютный путь от корня
-                                        ['target' => '_blank']
-                                    );
-                                }
-                            } else {
-                                if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
-                                    $displayValue = Html::a(Html::encode($value), $value, [
-                                        'target' => '_blank',
-                                        'rel' => 'noopener noreferrer'
-                                    ]);
-                                } elseif (is_array($value)) {
-                                    $displayValue = Html::encode(implode(', ', $value));
-                                } else {
-                                    $displayValue = Html::encode($value);
-                                }
-                            }
-                            ?>
-                            <td><?= $displayValue ?></td>
+                            <th><?= Html::encode($field->field_name) ?></th>
                         <?php endforeach; ?>
                     </tr>
-                <?php endfor; ?>
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                    <?php for ($r = 0; $r < $maxRows; $r++): ?>
+                        <tr>
+                            <?php foreach ($formFields as $field): ?>
+                                <td>
+                                    <?php
+                                    $raw  = $fieldDataMap[$field->id][$r]['data'] ?? $fieldDataMap[$field->id][$r] ?? '';
+                                    $out  = Html::encode($raw);
+
+                                    /* — файлы — */
+                                    if ($field->type_id == 5 && is_string($raw) && $raw !== '') {
+                                        $ext = strtolower(pathinfo($raw, PATHINFO_EXTENSION));
+                                        $imgOk = ['jpg','jpeg','png','gif','bmp','webp'];
+                                        $docOk = ['pdf','doc','docx','xls','xlsx'];
+
+                                        if (in_array($ext, $imgOk)) {
+                                            $src = Yii::getAlias('@web/'.ltrim($raw,'/'));
+                                            $out = Html::img($src,['style'=>'max-width:100px','class'=>'rounded']);
+                                        } elseif (in_array($ext,$docOk)) {
+                                            $thumb = Yii::getAlias('@web/uploads/previews/'.ltrim($raw,'/uploads'));
+                                            $thumb = rtrim($thumb,'.'.$ext).'.jpg';
+                                            $out   = Html::a(
+                                                Html::img($thumb,['style'=>'max-width:100px','class'=>'rounded shadow-sm']),
+                                                '/'.$raw, ['target'=>'_blank']
+                                            );
+                                        } else {
+                                            $out = Html::a(basename($raw), '/'.$raw, ['target'=>'_blank']);
+                                        }
+
+                                        /* — URL — */
+                                    } elseif ($isUrl($raw)) {
+                                        $out = Html::a(Html::encode($raw), $raw, ['target'=>'_blank']);
+                                        /* — массив — */
+                                    } elseif (is_array($raw)) {
+                                        $out = Html::encode(implode(', ', $raw));
+                                    }
+                                    echo $out;
+                                    ?>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                    <?php endfor; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     <?php endforeach; ?>
-</div>
+    <!-- ===== /данные ===== -->
 
+</div>

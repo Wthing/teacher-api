@@ -3,6 +3,7 @@
 use app\models\Form;
 use app\models\FormConfirmPerson;
 use app\models\FormFieldAutocomplete;
+use app\models\User;
 use yii\helpers\Html;
 use yii\helpers\Json;
 
@@ -16,6 +17,7 @@ function isValidUrl($url) {
     return filter_var($url, FILTER_VALIDATE_URL) !== false;
 }
 
+$user = User::findOne($profileId);
 $autocompleteMap = [];
 $allAutocompleteRows = FormFieldAutocomplete::find()->all();
 foreach ($allAutocompleteRows as $entry) {
@@ -23,206 +25,213 @@ foreach ($allAutocompleteRows as $entry) {
 }
 ?>
 
-<div class="container mt-3">
-    <?php if (in_array($profileId, $accessGranted)): ?>
-        <?php if ($unreadRequestsCount > 0): ?>
-            <div class="mb-3 text-end">
-                <a href="/confirm-application/" class="btn btn-outline-danger position-relative">
-                    🔔
+<head>
+    <!-- MDB CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <title>Профиль</title>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="fw-bold mb-0">Профиль: <?= Html::encode($user->username) ?></h2>
+
+        <?php if (in_array($profileId, $accessGranted)): ?>
+            <a href="/confirm-application/" class="btn btn-outline-<?= $unreadRequestsCount > 0 ? 'danger' : 'secondary' ?> position-relative">
+                🔔
+                <?php if ($unreadRequestsCount > 0): ?>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    <?= $unreadRequestsCount ?>
-                    <span class="visually-hidden">непрочитанные заявки</span>
-                </span>
-                </a>
-            </div>
-        <?php else: ?>
-            <div class="mb-3 text-end">
-                <a href="/confirm-application/" class="btn btn-outline-secondary">
-                    🔔
-                </a>
-            </div>
+                        <?= $unreadRequestsCount ?>
+                        <span class="visually-hidden">непрочитанные заявки</span>
+                    </span>
+                <?php endif; ?>
+            </a>
         <?php endif; ?>
-    <?php endif; ?>
-
-
+    </div>
 
     <?php foreach ($forms as $form): ?>
         <?php
         $formFields = $form->formFields;
         $fieldDataMap = [];
-
         foreach ($formFields as $field) {
             $fieldDataMap[$field->id] = $userData[$field->id] ?? [];
         }
-
         $maxCount = 0;
         foreach ($fieldDataMap as $dataRows) {
             $maxCount = max($maxCount, count($dataRows));
         }
         ?>
 
-        <h3 class="mt-4"><?= Html::encode($form->form_name) ?></h3>
+        <div class="card border-0 shadow-sm mb-5">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><?= Html::encode($form->form_name) ?></h5>
+                <button class="btn btn-light btn-sm create-field-btn"
+                        data-form="<?= $form->id ?>"
+                        data-fields='<?= Json::encode($formFields) ?>'>
+                    + Добавить запись
+                </button>
+            </div>
 
-        <div class="col-md-12 text-right mb-3">
-            <button class="btn btn-success btn-sm create-field-btn"
-                    data-form="<?= $form->id ?>"
-                    data-fields='<?= Json::encode($formFields) ?>'>
-                +
-            </button>
-        </div>
-
-        <?php if ($maxCount > 0): ?>
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover align-middle">
-                    <thead class="table-light">
-                    <tr>
-                        <?php foreach ($formFields as $field): ?>
-                            <th><?= Html::encode($field->field_name) ?></th>
-                        <?php endforeach; ?>
-                        <th>Действия</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <?php for ($i = 0; $i < $maxCount; $i++): ?>
-                        <?php
-                        $rowData = [];
-                        $recordIds = [];
-                        ?>
+            <?php if ($maxCount > 0): ?>
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead class="table-light">
                         <tr>
                             <?php foreach ($formFields as $field): ?>
-                                <?php
-                                $fieldId = $field->id;
-                                $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
-                                $displayValue = '';
-
-                                if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                                    $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
-                                    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
-
-                                    if (in_array($ext, $imageExtensions)) {
-                                        $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                                        $displayValue = Html::img($url, [
-                                            'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                            'alt' => basename($value),
-                                            'class' => 'img-thumbnail'
-                                        ]);
-                                    } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
-                                        $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
-                                        $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
-                                        $documentUrl = '/' . ltrim($value, '/');
-                                        $displayValue = Html::a(
-                                            Html::img($previewUrl, [
-                                                'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                                'alt' => basename($value),
-                                                'class' => 'img-thumbnail',
-                                            ]),
-                                            $documentUrl,
-                                            [
-                                                'target' => '_blank',
-                                                'title' => 'Открыть документ: ' . basename($value),
-                                            ]
-                                        );
-                                    } else {
-                                        $displayValue = Html::a(
-                                            basename($value),
-                                            '/' . ltrim($value, '/'),
-                                            ['target' => '_blank']
-                                        );
-                                    }
-                                } else {
-                                    if (is_string($value) && isValidUrl($value)) {
-                                        $displayValue = Html::a(Html::encode($value), $value, [
-                                            'target' => '_blank',
-                                            'rel' => 'noopener noreferrer'
-                                        ]);
-                                    } elseif (is_array($value)) {
-                                        $displayValue = Html::encode(implode(', ', $value));
-                                    } else {
-                                        $displayValue = Html::encode($value);
-                                    }
-                                }
-
-                                $rowData[$fieldId] = $value;
-
-                                if (isset($fieldDataMap[$fieldId][$i]['id'])) {
-                                    $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
-                                }
-                                ?>
-                                <td><?= $displayValue ?></td>
+                                <th><?= Html::encode($field->field_name) ?></th>
                             <?php endforeach; ?>
-
-                            <td class="text-end">
-                                <button class="btn btn-warning btn-sm edit-field-btn"
-                                        data-form="<?= $form->id ?>"
-                                        data-ids='<?= Json::encode($recordIds) ?>'
-                                        data-values='<?= Json::encode($rowData) ?>'
-                                        data-fields='<?= Json::encode($formFields) ?>'>
-                                    ✎
-                                </button>
-                                <button class="btn btn-danger btn-sm delete-field-btn"
-                                        data-ids='<?= Json::encode($recordIds) ?>'
-                                        name="<?= Yii::$app->request->csrfParam ?>"
-                                        value="<?= Yii::$app->request->getCsrfToken() ?>">
-                                    🗑
-                                </button>
-                            </td>
+                            <th class="text-center">Действия</th>
                         </tr>
-                    <?php endfor; ?>
-                    </tbody>
-                </table>
-            </div>
-        <?php endif; ?>
+                        </thead>
+                        <tbody>
+                        <?php for ($i = 0; $i < $maxCount; $i++): ?>
+                            <?php
+                            $rowData = [];
+                            $recordIds = [];
+                            ?>
+                            <tr>
+                                <?php foreach ($formFields as $field): ?>
+                                    <?php
+                                    $fieldId = $field->id;
+                                    $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                                    $displayValue = '';
 
+                                    if ($field->type_id == 5 && is_string($value) && $value !== '') {
+                                        $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                                        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+
+                                        if (in_array($ext, $imageExtensions)) {
+                                            $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
+                                            $displayValue = Html::img($url, [
+                                                'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                                'class' => 'img-thumbnail'
+                                            ]);
+                                        } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
+                                            $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
+                                            $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
+                                            $documentUrl = '/' . ltrim($value, '/');
+                                            $displayValue = Html::a(
+                                                Html::img($previewUrl, [
+                                                    'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                                    'class' => 'img-thumbnail'
+                                                ]),
+                                                $documentUrl,
+                                                ['target' => '_blank']
+                                            );
+                                        } else {
+                                            $displayValue = Html::a(basename($value), '/' . ltrim($value, '/'), ['target' => '_blank']);
+                                        }
+                                    } else {
+                                        if (is_string($value) && isValidUrl($value)) {
+                                            $displayValue = Html::a(Html::encode($value), $value, ['target' => '_blank']);
+                                        } elseif (is_array($value)) {
+                                            $displayValue = Html::encode(implode(', ', $value));
+                                        } else {
+                                            $displayValue = Html::encode($value);
+                                        }
+                                    }
+
+                                    $rowData[$fieldId] = $value;
+                                    if (isset($fieldDataMap[$fieldId][$i]['id'])) {
+                                        $recordIds[] = $fieldDataMap[$fieldId][$i]['id'];
+                                    }
+                                    ?>
+                                    <td><?= $displayValue ?></td>
+                                <?php endforeach; ?>
+
+                                <td class="text-center" style="width: 90px;">
+                                    <div class="btn-group btn-group-sm" role="group" aria-label="Управление записью">
+                                        <!-- Редактировать -->
+                                        <button type="button"
+                                                class="btn btn-outline-warning edit-field-btn"
+                                                data-bs-toggle="tooltip"
+                                                title="Редактировать"
+                                                data-form="<?= $form->id ?>"
+                                                data-ids='<?= Json::encode($recordIds) ?>'
+                                                data-values='<?= Json::encode($rowData) ?>'
+                                                data-fields='<?= Json::encode($formFields) ?>'>
+                                            ✎
+                                        </button>
+
+                                        <!-- Удалить -->
+                                        <button type="button"
+                                                class="btn btn-outline-danger delete-field-btn"
+                                                data-bs-toggle="tooltip"
+                                                title="Удалить"
+                                                data-ids='<?= Json::encode($recordIds) ?>'
+                                                name="<?= Yii::$app->request->csrfParam ?>"
+                                                value="<?= Yii::$app->request->getCsrfToken() ?>">
+                                            🗑
+                                        </button>
+                                    </div>
+                                </td>
+
+
+                            </tr>
+                        <?php endfor; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="p-4 text-muted">Нет данных для отображения</div>
+            <?php endif; ?>
+        </div>
     <?php endforeach; ?>
 
 
     <!-- Edit Modal -->
-<div class="modal fade" id="editFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="editFieldModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <form id="editForm" method="post" enctype="multipart/form-data" action="/site/update-form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title">Редактировать данные</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="modalFieldsContainer"></div>
+    <div class="modal fade" id="editFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="editFieldModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;" role="document">
+            <div class="modal-content rounded-4 shadow-sm">
+                <form id="editForm" method="post" enctype="multipart/form-data" action="/site/update-form-data">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title">✏️ Редактировать данные</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
 
-                <input type="hidden" name="form_id" id="modalFormId">
+                    <div class="modal-body pt-3" id="modalFieldsContainer" style="max-height: 65vh; overflow-y: auto;">
+                        <!-- джаваскрипт добавит сюда поля -->
+                    </div>
 
-                <!-- Here we will dynamically add hidden inputs for record_ids -->
-                <div id="modalRecordIdsContainer"></div>
+                    <input type="hidden" name="form_id" id="modalFormId">
+                    <div id="modalRecordIdsContainer"></div>
+                    <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
 
-                <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
-
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                </div>
-            </form>
+                    <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary px-4">💾 Сохранить</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">❌ Отмена</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Create Modal -->
-<div class="modal fade" id="createFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="createFieldModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <form id="createForm" method="post" enctype="multipart/form-data" action="/site/create-form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title">Создать новую запись</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="createFieldsContainer"></div>
-                <input type="hidden" name="form_id" id="createFormId">
-                <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Создать</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                </div>
-            </form>
+    <!-- Create Modal -->
+    <div class="modal fade" id="createFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="createFieldModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;" role="document">
+            <div class="modal-content rounded-4 shadow-sm">
+                <form id="createForm" method="post" enctype="multipart/form-data" action="/site/create-form-data">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title">📝 Создать новую запись</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+
+                    <div class="modal-body pt-3" id="createFieldsContainer" style="max-height: 65vh; overflow-y: auto;">
+                        <!-- джаваскрипт добавит сюда поля -->
+                    </div>
+
+                    <input type="hidden" name="form_id" id="createFormId">
+                    <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
+
+                    <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success px-4">✅ Создать</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">❌ Отмена</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
 
 <?php

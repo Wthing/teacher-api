@@ -9,6 +9,14 @@ use yii\helpers\Html;
 
 $this->title = $name;
 ?>
+
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <title>Профиль</title>
+</head>
+
+<script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+
 <div class="site-error">
 
     <h1><?= Html::encode($this->title) ?></h1>
