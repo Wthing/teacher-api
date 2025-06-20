@@ -1,6 +1,7 @@
 <?php
 
 use app\assets\AppAsset;
+use diecoding\aws\s3\Service;
 
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/db.php';
@@ -18,37 +19,43 @@ $config = [
 
     'modules' => [
         'admin' => [
-
             'layout' => 'left-menu',
-            'menus' => [
-                'assignment' => [
-                    'label' => 'Grant Access'
-                ],
-                'menu' => null,
-                'class' => null,
-                'idField' => null,
-                'usernameField' => null,
-            ],
-
             'class' => 'mdm\admin\Module',
-
             'controllerMap' => [
-                'class' => 'mdm\admin\controllers\AssignmentController',
-                'idField' => 'id',
-                'usernameField' => 'username',
+                'assignment' => [
+                    'class' => 'mdm\admin\controllers\AssignmentController',
+                    'userClassName' => 'app\models\User',
+                    'idField' => 'id',
+                    'usernameField' => 'username',
+                    'searchClass' => 'app\models\UserSearch',
+                ]
             ]
         ],
     ],
 
     'components' => [
 
+        's3' => [
+            'class' => Service::class,
+            'endpoint' => 'my-endpoint',
+            'usePathStyleEndpoint' => true,
+            'credentials' => [ // Aws\Credentials\CredentialsInterface|array|callable
+                'key' => 'my-key',
+                'secret' => 'my-secret',
+            ],
+            'region' => 'my-region',
+            'defaultBucket' => 'my-bucket',
+            'defaultAcl' => 'public-read',
+        ],
+
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
-//            'defaultRoles' => ['admin', 'super-teacher'],
+            'defaultRoles' => ['admin', 'super-teacher'],
         ],
         'as access' => [
             'class' => 'mdm\admin\components\AccessControl',
             'allowActions' => [
+                'data/search'
             ]
         ],
 

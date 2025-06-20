@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use app\models\ContactForm;
 use app\models\Data;
+use app\models\DataSearch;
 use app\models\Form;
 use app\models\FormConfirmApplication;
 use app\models\FormConfirmPerson;
@@ -66,7 +67,43 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $searchModel = new DataSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        $allForms = Form::find()
+            ->where(['status' => true])
+            ->orderBy(['form_name' => SORT_ASC])
+            ->all();
+
+        $formsQuery = Form::find()
+            ->joinWith(['formFields.data d'])
+            ->where(['forms.status' => true])
+            ->andWhere(['IS NOT', 'd.data', null]);
+
+        if (!empty($searchModel->form_id)) {
+            $formsQuery->andWhere(['forms.id' => $searchModel->form_id]);
+        }
+
+        $forms = $formsQuery->all();
+
+        $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
+        $rawData = $dataProvider->getModels();
+        $groupedData = [];
+
+        foreach ($rawData as $data) {
+            $groupedData[$data->field_id][] = [
+                'id' => $data->id,
+                'data' => $data->data,
+            ];
+        }
+
+        return $this->render('index', [
+            'forms' => $forms,
+            'allForms' => $allForms,
+            'fields' => $formFields,
+            'userData' => $groupedData,
+            'searchModel' => $searchModel,
+        ]);
     }
 
     /**
@@ -373,10 +410,10 @@ class SiteController extends Controller
             $recordId = $recordIds[$fieldId] ?? null;
 
             if ($recordId) {
-                $record = Data::findOne(['id' => $recordId, 'user_id' => $profile->id]);
+                $record = Data::findOne(['id' => $recordId, 'profile_id' => $profile->id]);
             } else {
                 $record = Data::find()
-                    ->where(['field_id' => $fieldId, 'user_id' => $profile->id])
+                    ->where(['field_id' => $fieldId, 'profile_id' => $profile->id])
                     ->one();
             }
 
@@ -475,7 +512,7 @@ class SiteController extends Controller
         $userData = Data::find()
             ->joinWith('formField')
             ->where(['data.form_id' => $form_id])
-            ->andWhere(['data.user_id' => 1])
+            ->andWhere(['data.profile_id' => 1])
             ->all();
 
         return $this->render('view-form-data', [
