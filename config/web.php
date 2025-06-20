@@ -56,7 +56,6 @@ $config = [
             'class' => 'mdm\admin\components\AccessControl',
             'allowActions' => [
                 'data/search',
-                'admin/*'
             ]
         ],
 
