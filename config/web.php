@@ -19,24 +19,16 @@ $config = [
 
     'modules' => [
         'admin' => [
-
             'layout' => 'left-menu',
-            'menus' => [
-                'assignment' => [
-                    'label' => 'Grant Access'
-                ],
-                'menu' => null,
-                'class' => null,
-                'idField' => null,
-                'usernameField' => null,
-            ],
-
             'class' => 'mdm\admin\Module',
-
             'controllerMap' => [
-                'class' => 'mdm\admin\controllers\AssignmentController',
-                'idField' => 'id',
-                'usernameField' => 'username',
+                'assignment' => [
+                    'class' => 'mdm\admin\controllers\AssignmentController',
+                    'userClassName' => 'app\models\User',
+                    'idField' => 'id',
+                    'usernameField' => 'username',
+                    'searchClass' => 'app\models\UserSearch',
+                ]
             ]
         ],
     ],
@@ -63,6 +55,7 @@ $config = [
         'as access' => [
             'class' => 'mdm\admin\components\AccessControl',
             'allowActions' => [
+                'data/search'
             ]
         ],
 

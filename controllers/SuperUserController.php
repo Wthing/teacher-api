@@ -7,8 +7,9 @@ use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\FormFieldAutocomplete;
 use app\models\FormFieldType;
+use mdm\admin\components\AccessControl;
 use Yii;
-use yii\filters\AccessControl;
+//use yii\filters\AccessControl;
 use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\web\Response;
@@ -20,12 +21,6 @@ class SuperUserController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'roles' => ['admin', 'super-teacher'],
-                    ],
-                ],
             ],
         ];
     }

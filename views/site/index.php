@@ -1,53 +1,72 @@
 <?php
 
 /** @var yii\web\View $this */
+/** @var DataSearch $searchModel */
+/** @var Form[] $forms */
+/** @var Form[] $allForms */
+/** @var array $fields */
+/** @var array $userData */
+
+use app\models\DataSearch;
+use app\models\Form;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Html;
+use yii\widgets\ActiveForm;
+
+function isValidUrl($url): bool
+{
+    return filter_var($url, FILTER_VALIDATE_URL) !== false;
+}
+
+$availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 
 $this->title = 'My Yii Application';
 ?>
 <div class="site-index">
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+        <div class="data-search" style="width: 100%; max-width: 1200px;">
+            <div class="bg-blue-500 text-black text-center p-4 rounded-lg">
 
-    <div class="jumbotron text-center bg-transparent mt-5 mb-5">
-        <h1 class="display-4">Congratulations!</h1>
+                <h1 class="display-4 mb-4">Извините, а вы не знаете где...</h1>
 
-        <p class="lead">You have successfully created your Yii-powered application.</p>
+                <?php $form = ActiveForm::begin([
+                    'action' => ['data/search'],
+                    'method' => 'get',
+                ]); ?>
 
-        <p><a class="btn btn-lg btn-success" href="https://www.yiiframework.com">Get started with Yii</a></p>
-    </div>
+                <div class="row g-3">
+                    <!-- Селект формы — уже -->
+                    <div class="col-md-3 col-12">
+                        <?= $form->field($searchModel, 'form_id')
+                            ->dropDownList($availableForms, [
+                                'prompt' => 'Выберите форму',
+                                'class' => 'form-select'
+                            ])
+                            ->label(false) ?>
+                    </div>
 
-    <div class="body-content">
+                    <!-- Поле поиска — шире -->
+                    <div class="col-md-9 col-12">
+                        <?= $form->field($searchModel, 'value')
+                            ->textInput([
+                                'placeholder' => 'Введите значение',
+                                'class' => 'form-control'
+                            ])
+                            ->label(false) ?>
+                    </div>
+                </div>
 
-        <div class="row">
-            <div class="col-lg-4 mb-3">
-                <h2>Heading</h2>
+                <!-- Кнопки по центру -->
+                <div class="text-center mt-4">
+                    <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary me-3']) ?>
+                    <?= Html::a('Очистить', ['data/search'], ['class' => 'btn btn-warning']) ?>
+                </div>
 
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/doc/">Yii Documentation &raquo;</a></p>
-            </div>
-            <div class="col-lg-4 mb-3">
-                <h2>Heading</h2>
-
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/forum/">Yii Forum &raquo;</a></p>
-            </div>
-            <div class="col-lg-4">
-                <h2>Heading</h2>
-
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
-
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/extensions/">Yii Extensions &raquo;</a></p>
+                <?php ActiveForm::end(); ?>
             </div>
         </div>
-
     </div>
 </div>
+
+
+

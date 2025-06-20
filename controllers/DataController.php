@@ -6,8 +6,8 @@ use app\models\Data;
 use app\models\DataSearch;
 use app\models\Form;
 use app\models\FormField;
+use mdm\admin\components\AccessControl;
 use Yii;
-use yii\filters\AccessControl;
 use yii\web\Controller;
 
 class DataController extends Controller
@@ -18,12 +18,6 @@ class DataController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ]
-                ]
             ]
         ];
     }
