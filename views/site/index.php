@@ -21,7 +21,7 @@ function isValidUrl($url): bool
 
 $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 
-$this->title = 'My Yii Application';
+$this->title = 'Потом придумаю...';
 ?>
 <head>
     <!-- MDB CSS -->
