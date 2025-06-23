@@ -608,6 +608,15 @@ class SiteController extends Controller
             'accessGranted' => $accessGranted,
         ]);
     }
+    public function actionSuperUser($profileId)
+    {
+        // проверяем любое из permissions, которые вы реально назначили
+        if (Yii::$app->user->can('/super-user/index')) {
+            return $this->redirect(['/super-user/index', 'profileId' => $profileId]);
+        }
+
+        throw new \yii\web\ForbiddenHttpException('У вас нет доступа к этой странице.');
+    }
 
 
 
