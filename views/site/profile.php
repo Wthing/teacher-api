@@ -38,8 +38,13 @@ foreach ($allAutocompleteRows as $entry) {
             <h2 class="fw-bold mb-0">Профиль: <?= Html::encode($user->username) ?></h2>
 
             <?php if (Yii::$app->user->can('/super-user/index')): ?>
-                <?= Html::a('Перейти в раздел администратора', ['/super-user/index'], ['class' => 'btn btn-primary']) ?>
+                <?= Html::a(
+                    'Перейти в раздел администратора',
+                    ['super-user/'],   // куда перейти
+                    ['class' => 'btn btn-primary']
+                ) ?>
             <?php endif; ?>
+
 
 
             <?php if (in_array($profileId, $accessGranted)): ?>
