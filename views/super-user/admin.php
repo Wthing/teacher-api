@@ -65,13 +65,12 @@ $forms = $query->orderBy(['id'=>SORT_DESC])->all();
         <!-- карточки форм -->
         <div class="row g-4">
             <?php foreach($forms as $form): ?>
-                <?php $disabled=!$form->status;$cnt=$form->getFormFields()->count(); ?>
+                <?php $disabled=!$form->status; ?>
                 <div class="col-sm-6 col-lg-4">
                     <div class="card shadow-sm <?= $disabled?'disabled':'' ?>">
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between mb-2">
                                 <h4 class="fs-5 mb-0"><?= Html::encode($form->form_name) ?></h4>
-                                <span class="badge bg-secondary"><?= $cnt ?></span>
                             </div>
                             <?php if($disabled):?><span class="badge bg-secondary mb-3">Отключена</span><?php endif;?>
                             <div class="mt-auto d-flex gap-2">

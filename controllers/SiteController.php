@@ -187,7 +187,7 @@ class SiteController extends Controller
 
         if (in_array($profileId, $accessGranted)) {
             $unreadRequestsCount = FormConfirmApplication::find()
-                ->where(['created_by' => $profileId])
+                ->where(['assigned_to' => $profileId])
                 ->andWhere(['status' => FormConfirmApplication::STATUS_PENDING])
                 ->count();
         }
