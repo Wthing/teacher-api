@@ -2,7 +2,6 @@
 
 namespace app\controllers;
 
-use app\models\Data;
 use app\models\DataSearch;
 use app\models\Form;
 use app\models\FormField;
@@ -50,9 +49,12 @@ class DataController extends Controller
         foreach ($rawData as $data) {
             $groupedData[$data->field_id][] = [
                 'id' => $data->id,
+                'user_id' => $data->user_id,
                 'data' => $data->data,
             ];
         }
+
+        Yii::info($groupedData);
 
         return $this->render('index', [
             'forms' => $forms,

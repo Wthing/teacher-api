@@ -10,6 +10,7 @@ use app\models\FormConfirmApplication;
 use app\models\FormConfirmPerson;
 use app\models\FormField;
 use app\models\LoginForm;
+use app\models\Profile;
 use app\models\User;
 use Yii;
 use yii\filters\AccessControl;
@@ -564,6 +565,48 @@ class SiteController extends Controller
         }
 
         return ['success' => true];
+    }
+
+    public function actionFetchProfile($profileId)
+    {
+//        Yii::info('testovik', $profileId);
+
+        $forms = Form::find()->where(['status' => true])->all();
+        $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->column();
+        $accessGranted = FormConfirmPerson::find()->select('user_id')->where(['user_id' => $profileId])->column();
+
+        $rawData = Data::find()
+            ->where(['user_id' => $profileId])
+            ->andWhere(['verification_status' => true])
+            ->orderBy(['field_id' => SORT_ASC])
+            ->all();
+
+        $unreadRequestsCount = 0;
+
+        if (in_array($profileId, $accessGranted)) {
+            $unreadRequestsCount = FormConfirmApplication::find()
+                ->where(['created_by' => $profileId])
+                ->andWhere(['status' => FormConfirmApplication::STATUS_PENDING])
+                ->count();
+        }
+
+
+        $groupedData = [];
+        foreach ($rawData as $data) {
+            $groupedData[$data->field_id][] = [
+                'id' => $data->id,
+                'data' => $data->data,
+            ];
+        }
+
+        return $this->render('watch-profile', [
+            'profileId' => $profileId,
+            'forms' => $forms,
+            'fields' => $formFields,
+            'userData' => $groupedData,
+            'unreadRequestsCount' => $unreadRequestsCount,
+            'accessGranted' => $accessGranted,
+        ]);
     }
 
 

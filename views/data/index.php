@@ -108,12 +108,33 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                     </tr>
                     </thead>
                     <tbody>
-                    <?php for ($i = 0; $i < $maxCount; $i++): ?>
-                        <tr>
-                            <?php foreach ($formFields as $field): ?>
+                    <?php
+                    $recordIndexes = [];
+                    foreach ($fieldDataMap as $fieldRows) {
+                        foreach ($fieldRows as $recordIndex => $valueData) {
+                            $recordIndexes[$recordIndex] = true;
+                        }
+                    }
+                    foreach (array_keys($recordIndexes) as $recordIndex):
+                    ?>
+                        <?php
+                        $userId = null;
+                        foreach ($formFields as $f) {
+                            $fieldId = $f->id;
+                            if (isset($fieldDataMap[$fieldId][$recordIndex]['user_id'])) {
+                                $userId = $fieldDataMap[$fieldId][$recordIndex]['user_id'];
+                                break;
+                            }
+                        }
+                        ?>
+                        <tr class="clickable-row" data-user-id="<?= Html::encode($userId) ?>">
+
+
+
+                        <?php foreach ($formFields as $field): ?>
                                 <?php
                                 $fieldId = $field->id;
-                                $value = $fieldDataMap[$fieldId][$i]['data'] ?? $fieldDataMap[$fieldId][$i] ?? '';
+                                $value = $fieldDataMap[$fieldId][$recordIndex]['data'] ?? ' - ';
                                 $displayValue = '';
 
                                 if ($field->type_id == 5 && is_string($value) && $value !== '') {
@@ -167,7 +188,7 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                                 <td><?= $displayValue ?></td>
                             <?php endforeach; ?>
                         </tr>
-                    <?php endfor; ?>
+                    <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -175,3 +196,28 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
     </div>
 
 </div>
+
+<style>
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+    }
+    .clickable-row:hover {
+        background-color: #f1f3f5;
+    }
+</style>
+
+
+<?php
+$view = $this;
+$view->registerJs(<<<JS
+document.querySelectorAll('.clickable-row').forEach(row => {
+    row.addEventListener('click', () => {
+        const userId = row.dataset.userId;
+        if (userId) {
+            window.location.href = '/site/fetch-profile?profileId=' + encodeURIComponent(userId);
+        }
+    });
+});
+JS);
+?>
