@@ -29,6 +29,10 @@ $config = [
                     'usernameField' => 'username',
                     'searchClass' => 'app\models\UserSearch',
                 ]
+            ],
+            'as access' => [
+                'class' => 'mdm\admin\components\AccessControl',
+                'allowActions' => ['']
             ]
         ],
     ],
@@ -50,12 +54,11 @@ $config = [
 
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
-            'defaultRoles' => ['admin', 'super-teacher'],
+//            'defaultRoles' => ['admin-form'],
         ],
         'as access' => [
             'class' => 'mdm\admin\components\AccessControl',
             'allowActions' => [
-                'data/search',
             ]
         ],
 
