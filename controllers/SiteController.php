@@ -609,6 +609,16 @@ class SiteController extends Controller
         ]);
     }
 
+    public function actionSuperUser($profileId)
+    {
+        if (Yii::$app->user->can('/super-user/index')) {
+            return $this->redirect(['/super-user/index', 'profileId' => $profileId]);
+        }
+
+        throw new \yii\web\ForbiddenHttpException('У вас нет доступа к этой странице.');
+    }
+
+
 
 
 }
