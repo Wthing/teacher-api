@@ -43,7 +43,7 @@ class FormService
                 $s3->commands()->upload($s3Path, $file->tempName)->execute();
                 $record->data = $s3Path;
 
-                $this->generatePreview($file, $fileName, $s3);
+//                $this->generatePreview($file, $fileName, $s3);
             } elseif ($value !== null) {
                 $record->data = $value;
             } else {
@@ -100,7 +100,7 @@ class FormService
                     $s3->commands()->upload($s3Path, $file->tempName)->execute();
                     $record->data = $s3Path;
 
-                    $this->generatePreview($file, $fileName, $s3);
+//                    $this->generatePreview($file, $fileName, $s3);
                 } catch (\Exception $e) {
                     Yii::error('Ошибка загрузки в S3: ' . $e->getMessage(), 'form');
                     Yii::$app->session->setFlash('error', 'Ошибка загрузки файла в хранилище');
