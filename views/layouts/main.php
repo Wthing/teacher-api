@@ -7,73 +7,130 @@ use app\assets\AppAsset;
 use app\widgets\Alert;
 use yii\bootstrap5\Breadcrumbs;
 use yii\bootstrap5\Html;
-use yii\bootstrap5\Nav;
-use yii\bootstrap5\NavBar;
+use yii\helpers\Url;
 
 AppAsset::register($this);
 
-$this->registerCsrfMetaTags();
-$this->registerMetaTag(['charset' => Yii::$app->charset], 'charset');
-$this->registerMetaTag(['name' => 'viewport', 'content' => 'width=device-width, initial-scale=1, shrink-to-fit=no']);
-$this->registerMetaTag(['name' => 'description', 'content' => $this->params['meta_description'] ?? '']);
-$this->registerMetaTag(['name' => 'keywords', 'content' => $this->params['meta_keywords'] ?? '']);
-$this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii::getAlias('@web/favicon.ico')]);
+function isActiveNav($route) {
+    return Yii::$app->controller->route === $route ? 'active text-primary fw-bold' : 'text-dark';
+}
 ?>
+
 <?php $this->beginPage() ?>
     <!DOCTYPE html>
     <html lang="<?= Yii::$app->language ?>" class="h-100">
     <head>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
-
+        <meta charset="<?= Yii::$app->charset ?>">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= Html::encode($this->title) ?></title>
+
         <?php $this->head() ?>
-        <?= Html::csrfMetaTags() ?>
+        <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
 
+        <style>
+            body {
+                background-color: #f9fafb;
+            }
+
+            .sidebar {
+                height: calc(100vh - 56px);
+                position: fixed;
+                width: 220px;
+                background: #ffffff;
+                border-right: 1px solid #dee2e6;
+                top: 56px;
+                left: 0;
+                padding-top: 20px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+
+            .content {
+                margin-left: 220px;
+                padding: 80px 20px 20px; /* top-padding для фиксированного navbar */
+            }
+        </style>
     </head>
-
-    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
 
     <body class="d-flex flex-column h-100">
     <?php $this->beginBody() ?>
 
-    <header id="header">
-        <?php
-        NavBar::begin([
-            'brandLabel' => 'Потом придумаю',
-            'brandUrl' => Yii::$app->homeUrl,
-            'options' => ['class' => 'navbar-expand-md navbar-dark bg-dark fixed-top']
-        ]);
-        echo Nav::widget([
-            'options' => ['class' => 'navbar-nav'],
-            'items' => [
-                ['label' => 'Профиль', 'url' => ['/site/profile']],
-                ['label' => 'О сайте', 'url' => ['/site/about']],
-                ['label' => 'Обратная связь', 'url' => ['/site/contact']],
-                Yii::$app->user->isGuest
-                    ? ['label' => 'Войти', 'url' => ['/site/login']]
-                    : '<li class="nav-item">'
-                    . Html::beginForm(['/site/logout'])
-                    . Html::submitButton(
-                        'Выйти (' . Yii::$app->user->identity->username . ')',
-                        ['class' => 'nav-link btn btn-link logout']
-                    )
-                    . Html::endForm()
-                    . '</li>'
-            ]
-        ]);
-        NavBar::end();
-        ?>
-    </header>
+    <!-- Верхний навбар -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">🌐 Мой портал</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#topNavDropdown" aria-controls="topNavDropdown"
+                    aria-expanded="false" aria-label="Toggle nav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-    <main id="main" class="flex-shrink-0" role="main">
-        <div class="container">
-            <?php if (!empty($this->params['breadcrumbs'])): ?>
-                <?= Breadcrumbs::widget(['links' => $this->params['breadcrumbs']]) ?>
-            <?php endif ?>
-            <?= Alert::widget() ?>
-            <?= $content ?>
+            <div class="collapse navbar-collapse justify-content-end" id="topNavDropdown">
+                <ul class="navbar-nav">
+                    <?php if (Yii::$app->user->isGuest): ?>
+                        <li class="nav-item">
+                            <?= Html::a('Войти', ['/site/login'], ['class' => 'nav-link ' . isActiveNav('site/login')]) ?>
+                        </li>
+                    <?php else: ?>
+                        <li class="nav-item">
+                            <?= Html::beginForm(['/site/logout'], 'post') .
+                            Html::submitButton(
+                                '🔓 Выход (' . Html::encode(Yii::$app->user->identity->username) . ')',
+                                ['class' => 'nav-link btn', 'style' => 'padding: 0; text-decoration: none;']
+                            ) .
+                            Html::endForm() ?>
+                        </li>
+                    <?php endif; ?>
+
+                </ul>
+            </div>
         </div>
+    </nav>
+
+    <!-- Боковая панель -->
+    <div class="sidebar pt-3">
+        <ul class="nav flex-column px-3">
+            <li class="nav-item mb-1">
+                <?= Html::a('🏠 Мой профиль', ['/site/profile', 'profileId' => Yii::$app->user->id], ['class' => 'nav-link ']) ?>
+            </li>
+            <li class="nav-item mb-1">
+                <?= Html::a('🔍 Поиск', ['/data/search'], ['class' => 'nav-link ']) ?>
+            </li>
+            <?php if (Yii::$app->user->can('/confirm-application/*')): ?>
+                <li class="nav-item mb-1">
+                    <?= Html::a('✅ Подтверждения', ['/confirm-application/index'], ['class' => 'nav-link ']) ?>
+                </li>
+            <?php endif; ?>
+            <li class="nav-item mb-1">
+                <?= Html::a('ℹ️ О сайте', ['/site/about'], ['class' => 'nav-link ']) ?>
+            </li>
+            <li class="nav-item mb-1">
+                <?= Html::a('📨 Обратная связь', ['/site/contact'], ['class' => 'nav-link ']) ?>
+            </li>
+        </ul>
+
+        <?php if (Yii::$app->user->can('/super-user/*')): ?>
+            <ul class="nav flex-column mb-0">
+                <li class="nav-item mt-2 border-top pt-2">
+                    <?= Html::a('🛠️ Админ-панель', ['/super-user/index'], ['class' => 'nav-link ']) ?>
+                </li>
+            </ul>
+        <?php endif ?>
+    </div>
+
+    <!-- Основной контент -->
+    <main class="content">
+        <?= Breadcrumbs::widget([
+            'links' => $this->params['breadcrumbs'] ?? [],
+        ]) ?>
+        <?= Alert::widget() ?>
+        <?= $content ?>
     </main>
+
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
 
     <?php $this->endBody() ?>
     </body>
