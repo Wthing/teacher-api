@@ -55,7 +55,6 @@ foreach ($allAutocompleteRows as $entry) {
             <div class="card border-0 shadow-sm mb-5">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><?= Html::encode($form->form_name) ?></h5>
-
                 </div>
 
                 <?php if ($maxCount > 0): ?>
@@ -82,29 +81,38 @@ foreach ($allAutocompleteRows as $entry) {
                                         $displayValue = '';
 
                                         if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                                            $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                                            $ext = strtolower(pathinfo(parse_url($value, PHP_URL_PATH), PATHINFO_EXTENSION));
                                             $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
                                             if (in_array($ext, $imageExtensions)) {
-                                                $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                                                $displayValue = Html::img($url, [
+                                                $displayValue = Html::img($value, [
                                                     'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                                    'class' => 'img-thumbnail'
+                                                    'class' => 'img-thumbnail',
                                                 ]);
                                             } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
-                                                $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
-                                                $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
-                                                $documentUrl = '/' . ltrim($value, '/');
+                                                $parsedPath = parse_url($value, PHP_URL_PATH);
+                                                $filename = pathinfo($parsedPath, PATHINFO_FILENAME);
+                                                $previewKey = 'uploads/previews/' . $filename . '.jpg';
+
+                                                try {
+                                                    $previewUrl = Yii::$app->s3->getPresignedUrl($previewKey, '+30 minutes');
+                                                } catch (\Throwable $e) {
+                                                    Yii::error("Ошибка генерации preview S3 URL: " . $e->getMessage(), 'form');
+                                                    $previewUrl = null;
+                                                }
+
+                                                Yii::info($previewUrl);
                                                 $displayValue = Html::a(
                                                     Html::img($previewUrl, [
                                                         'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                                        'class' => 'img-thumbnail'
+                                                        'class' => 'img-thumbnail',
+                                                        'alt' => 'Превью'
                                                     ]),
-                                                    $documentUrl,
+                                                    $value,
                                                     ['target' => '_blank']
                                                 );
                                             } else {
-                                                $displayValue = Html::a(basename($value), '/' . ltrim($value, '/'), ['target' => '_blank']);
+                                                $displayValue = Html::a(basename(parse_url($value, PHP_URL_PATH)), $value, ['target' => '_blank']);
                                             }
                                         } else {
                                             if (is_string($value) && isValidUrl($value)) {
@@ -133,61 +141,6 @@ foreach ($allAutocompleteRows as $entry) {
                 <?php endif; ?>
             </div>
         <?php endforeach; ?>
-
-
-        <!-- Edit Modal -->
-        <div class="modal fade" id="editFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="editFieldModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;" role="document">
-                <div class="modal-content rounded-4 shadow-sm">
-                    <form id="editForm" method="post" enctype="multipart/form-data" action="/site/update-form-data">
-                        <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title">✏️ Редактировать данные</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                        </div>
-
-                        <div class="modal-body pt-3" id="modalFieldsContainer" style="max-height: 65vh; overflow-y: auto;">
-                            <!-- джаваскрипт добавит сюда поля -->
-                        </div>
-
-                        <input type="hidden" name="form_id" id="modalFormId">
-                        <div id="modalRecordIdsContainer"></div>
-                        <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
-
-                        <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
-                            <button type="submit" class="btn btn-primary px-4">💾 Сохранить</button>
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">❌ Отмена</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Create Modal -->
-        <div class="modal fade" id="createFieldModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="createFieldModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;" role="document">
-                <div class="modal-content rounded-4 shadow-sm">
-                    <form id="createForm" method="post" enctype="multipart/form-data" action="/site/create-form-data">
-                        <div class="modal-header border-0 pb-0">
-                            <h5 class="modal-title">📝 Создать новую запись</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                        </div>
-
-                        <div class="modal-body pt-3" id="createFieldsContainer" style="max-height: 65vh; overflow-y: auto;">
-                            <!-- джаваскрипт добавит сюда поля -->
-                        </div>
-
-                        <input type="hidden" name="form_id" id="createFormId">
-                        <input type="hidden" name="<?= Yii::$app->request->csrfParam ?>" value="<?= Yii::$app->request->getCsrfToken() ?>">
-
-                        <div class="modal-footer border-0 pt-0 d-flex justify-content-between">
-                            <button type="submit" class="btn btn-success px-4">✅ Создать</button>
-                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">❌ Отмена</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
 
 <?php
 $csrfToken = Yii::$app->request->getCsrfToken();

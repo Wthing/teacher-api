@@ -25,7 +25,12 @@ function isActiveNav($route) {
         <title><?= Html::encode($this->title) ?></title>
 
         <?php $this->head() ?>
+
+        <!-- Tabler Core CSS -->
         <link href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet">
+
+        <!-- ✅ Tabler Icons Webfont -->
+        <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" rel="stylesheet">
 
         <style>
             body {
@@ -48,21 +53,25 @@ function isActiveNav($route) {
 
             .content {
                 margin-left: 220px;
-                padding: 80px 20px 20px; /* top-padding для фиксированного navbar */
+                padding: 80px 20px 20px;
             }
         </style>
     </head>
+
 
     <body class="d-flex flex-column h-100">
     <?php $this->beginBody() ?>
 
     <!-- Верхний навбар -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top border-bottom shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="/">🌐 Мой портал</a>
+            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+                <i class="ti ti-world"></i> Мой портал
+            </a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                     data-bs-target="#topNavDropdown" aria-controls="topNavDropdown"
-                    aria-expanded="false" aria-label="Toggle nav">
+                    aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
@@ -70,54 +79,71 @@ function isActiveNav($route) {
                 <ul class="navbar-nav">
                     <?php if (Yii::$app->user->isGuest): ?>
                         <li class="nav-item">
-                            <?= Html::a('Войти', ['/site/login'], ['class' => 'nav-link ' . isActiveNav('site/login')]) ?>
+                            <?= Html::a(
+                                '<i class="ti ti-login me-1"></i> Войти',
+                                ['/site/login'],
+                                ['class' => 'nav-link ' . isActiveNav('site/login')]
+                            ) ?>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
                             <?= Html::beginForm(['/site/logout'], 'post') .
                             Html::submitButton(
-                                '🔓 Выход (' . Html::encode(Yii::$app->user->identity->username) . ')',
-                                ['class' => 'nav-link btn', 'style' => 'padding: 0; text-decoration: none;']
+                                '<i class="ti ti-logout me-1"></i> Выход (' . Html::encode(Yii::$app->user->identity->username) . ')',
+                                ['class' => 'nav-link btn', 'style' => 'padding: 10px; text-decoration: none; background: none; border: none;']
                             ) .
                             Html::endForm() ?>
                         </li>
                     <?php endif; ?>
-
                 </ul>
             </div>
         </div>
     </nav>
 
+
     <!-- Боковая панель -->
     <div class="sidebar pt-3">
         <ul class="nav flex-column px-3">
             <li class="nav-item mb-1">
-                <?= Html::a('🏠 Мой профиль', ['/site/profile', 'profileId' => Yii::$app->user->id], ['class' => 'nav-link ']) ?>
+                <?= Html::a('<i class="ti ti-user"></i><span>Мой профиль</span>', ['/site/profile', 'profileId' => Yii::$app->user->id], [
+                    'class' => 'nav-link d-flex align-items-center gap-2 ' . isActiveNav('site/profile')
+                ]) ?>
             </li>
             <li class="nav-item mb-1">
-                <?= Html::a('🔍 Поиск', ['/data/search'], ['class' => 'nav-link ']) ?>
+                <?= Html::a('<i class="ti ti-search"></i><span>Поиск</span>', ['/data/search'], [
+                    'class' => 'nav-link d-flex align-items-center gap-2 ' . isActiveNav('data/search')
+                ]) ?>
             </li>
             <?php if (Yii::$app->user->can('/confirm-application/*')): ?>
                 <li class="nav-item mb-1">
-                    <?= Html::a('✅ Подтверждения', ['/confirm-application/index'], ['class' => 'nav-link ']) ?>
+                    <?= Html::a('<i class="ti ti-check"></i><span>Подтверждения</span>', ['/confirm-application/index'], [
+                        'class' => 'nav-link d-flex align-items-center gap-2 ' . isActiveNav('confirm-application/index')
+                    ]) ?>
                 </li>
             <?php endif; ?>
             <li class="nav-item mb-1">
-                <?= Html::a('ℹ️ О сайте', ['/site/about'], ['class' => 'nav-link ']) ?>
+                <?= Html::a('<i class="ti ti-info-circle"></i><span>О сайте</span>', ['/site/about'], [
+                    'class' => 'nav-link d-flex align-items-center gap-2 ' . isActiveNav('site/about')
+                ]) ?>
             </li>
             <li class="nav-item mb-1">
-                <?= Html::a('📨 Обратная связь', ['/site/contact'], ['class' => 'nav-link ']) ?>
+                <?= Html::a('<i class="ti ti-mail"></i><span>Обратная связь</span>', ['/site/contact'], [
+                    'class' => 'nav-link d-flex align-items-center gap-2 ' . isActiveNav('site/contact')
+                ]) ?>
             </li>
         </ul>
 
         <?php if (Yii::$app->user->can('/super-user/*')): ?>
             <ul class="nav flex-column mb-0">
                 <li class="nav-item mt-2 border-top pt-2">
-                    <?= Html::a('🛠️ Админ-панель', ['/super-user/index'], ['class' => 'nav-link ']) ?>
+                    <?= Html::a('<i class="ti ti-settings"></i><span>Админ-панель</span>', ['/super-user/index'], [
+                        'class' => 'nav-link d-flex align-items-center gap-2 ' . isActiveNav('super-user/index')
+                    ]) ?>
                 </li>
             </ul>
         <?php endif ?>
     </div>
+
 
     <!-- Основной контент -->
     <main class="content">

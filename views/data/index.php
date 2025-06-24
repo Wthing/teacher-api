@@ -23,8 +23,8 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 ?>
 
     <head>
-        <!-- MDB CSS -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
         <title>Профиль</title>
     </head>
 
@@ -62,18 +62,15 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                     </div>
                 </div>
                 <div class="col-auto">
-                    <div class="form-group  d-flex gap-2 align-items-center h-100">
-                        <?= Html::submitButton('Поиск', ['class' => 'btn btn-primary']) ?>
-                        <?= Html::a('Очистить', ['search'], ['class' => 'btn btn-warning']) ?>
+                    <div class="form-group d-flex gap-2 align-items-center h-100">
+                        <?= Html::submitButton('<i class="ti ti-search me-1"></i>Поиск', ['class' => 'btn btn-primary']) ?>
+                        <?= Html::a('<i class="ti ti-eraser me-1"></i>Очистить', ['search'], ['class' => 'btn btn-warning']) ?>
                     </div>
                 </div>
             </div>
 
             <?php ActiveForm::end(); ?>
         </div>
-
-
-
 
         <div class="container mt-3">
             <?php foreach ($forms as $form): ?>
@@ -85,16 +82,12 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                     $fieldDataMap[$field->id] = $userData[$field->id] ?? [];
                 }
 
-                // Максимальное количество строк в текущем наборе данных
                 $maxCount = 0;
                 foreach ($fieldDataMap as $dataRows) {
                     $maxCount = max($maxCount, count($dataRows));
                 }
 
-                // Если данных нет ни в одном поле формы, не отображаем таблицу
-                if ($maxCount === 0) {
-                    continue;
-                }
+                if ($maxCount === 0) continue;
                 ?>
 
                 <div class="table-responsive mb-4">
@@ -116,8 +109,6 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                             }
                         }
                         foreach (array_keys($recordIndexes) as $recordIndex):
-                            ?>
-                            <?php
                             $userId = null;
                             foreach ($formFields as $f) {
                                 $fieldId = $f->id;
@@ -128,9 +119,6 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                             }
                             ?>
                             <tr class="clickable-row" data-user-id="<?= Html::encode($userId) ?>">
-
-
-
                                 <?php foreach ($formFields as $field): ?>
                                     <?php
                                     $fieldId = $field->id;
@@ -138,42 +126,39 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                                     $displayValue = '';
 
                                     if ($field->type_id == 5 && is_string($value) && $value !== '') {
-                                        $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                                        $ext = strtolower(pathinfo(parse_url($value, PHP_URL_PATH), PATHINFO_EXTENSION));
                                         $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
                                         if (in_array($ext, $imageExtensions)) {
-                                            $url = Yii::getAlias('@web') . '/' . ltrim($value, '/');
-                                            $displayValue = Html::img($url, [
+                                            $displayValue = Html::img($value, [
                                                 'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                                'alt' => basename($value),
-                                                'class' => 'img-thumbnail'
+                                                'class' => 'img-thumbnail',
                                             ]);
                                         } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'xls', 'xlsx'])) {
-                                            $url = Yii::getAlias('@web') . '/uploads/previews/' . ltrim($value, '/uploads');
-                                            $previewUrl = rtrim($url, '.' . $ext) . '.jpg';
-                                            $documentUrl = '/' . ltrim($value, '/');
+                                            $parsedPath = parse_url($value, PHP_URL_PATH);
+                                            $filename = pathinfo($parsedPath, PATHINFO_FILENAME);
+                                            $previewKey = 'uploads/previews/' . $filename . '.jpg';
 
+                                            try {
+                                                $previewUrl = Yii::$app->s3->getPresignedUrl($previewKey, '+30 minutes');
+                                            } catch (\Throwable $e) {
+                                                Yii::error("Ошибка генерации preview S3 URL: " . $e->getMessage(), 'form');
+                                                $previewUrl = null;
+                                            }
+
+                                            Yii::info($previewUrl);
                                             $displayValue = Html::a(
                                                 Html::img($previewUrl, [
                                                     'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
-                                                    'alt' => basename($value),
                                                     'class' => 'img-thumbnail',
+                                                    'alt' => 'Превью'
                                                 ]),
-                                                $documentUrl,
-                                                [
-                                                    'target' => '_blank',
-                                                    'title' => 'Открыть документ: ' . basename($value),
-                                                ]
-                                            );
-                                        } else {
-                                            $displayValue = Html::a(
-                                                basename($value),
-                                                '/' . ltrim($value, '/'),
+                                                $value,
                                                 ['target' => '_blank']
                                             );
                                         }
                                     } else {
-                                        if (is_string($value) && filter_var($value, FILTER_VALIDATE_URL)) {
+                                        if (is_string($value) && isValidUrl($value)) {
                                             $displayValue = Html::a(Html::encode($value), $value, [
                                                 'target' => '_blank',
                                                 'rel' => 'noopener noreferrer'
@@ -194,7 +179,6 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
                 </div>
             <?php endforeach; ?>
         </div>
-
     </div>
 
     <style>
@@ -207,10 +191,8 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
         }
     </style>
 
-
 <?php
-$view = $this;
-$view->registerJs(<<<JS
+$this->registerJs(<<<JS
 document.querySelectorAll('.clickable-row').forEach(row => {
     row.addEventListener('click', () => {
         const userId = row.dataset.userId;
