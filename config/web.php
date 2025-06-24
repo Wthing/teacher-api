@@ -1,6 +1,8 @@
 <?php
 
 use app\assets\AppAsset;
+use app\services\FormService;
+use app\services\SuperUserService;
 use diecoding\aws\s3\Service;
 
 $params = require __DIR__ . '/params.php';
@@ -40,16 +42,19 @@ $config = [
     'components' => [
 
         's3' => [
-            'class' => Service::class,
+            'class' =>  Service::class,
             'endpoint' => $_ENV['S3_ENDPOINT'],
             'usePathStyleEndpoint' => true,
-            'credentials' => [ // Aws\Credentials\CredentialsInterface|array|callable
+            'credentials' => [
                 'key' => $_ENV['S3_AUTH_KEY'],
                 'secret' => $_ENV['S3_SECRET_KEY'],
             ],
-            'region' => 'my-region',
+            'region' => 'eu-north-1',
             'defaultBucket' => $_ENV['S3_BUCKET'],
             'defaultAcl' => 'public-read',
+            'httpOptions' => [
+                'verify' => false,
+            ]
         ],
 
         'authManager' => [
@@ -121,5 +126,7 @@ if (YII_ENV_DEV) {
 
 $container = Yii::$container;
 $container->set(AppAsset::class);
+$container->set(FormService::class);
+$container->set(SuperUserService::class);
 
 return $config;

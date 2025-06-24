@@ -12,6 +12,8 @@ use app\models\FormField;
 use app\models\LoginForm;
 use app\models\Profile;
 use app\models\User;
+use app\services\FormService;
+use diecoding\aws\s3\Service;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -20,8 +22,17 @@ use yii\web\Controller;
 use yii\web\Response;
 use yii\web\UploadedFile;
 
+/** @var Service $s3 */
 class SiteController extends Controller
 {
+    private FormService $formService;
+
+    public function __construct($id, $module, FormService $formService, $config = [])
+    {
+        $this->formService = $formService;
+        parent::__construct($id, $module, $config);
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -171,6 +182,7 @@ class SiteController extends Controller
 
     public function actionProfile()
     {
+        $s3 = Yii::$app->s3;
         $profileId = Yii::$app->user->id;
 
         $forms = Form::find()->where(['status' => true])->all();
@@ -192,14 +204,27 @@ class SiteController extends Controller
                 ->count();
         }
 
-
         $groupedData = [];
+
         foreach ($rawData as $data) {
+            $url = $data->data;
+
+            if (is_string($url) && (str_starts_with($url, 'uploads/') || str_starts_with($url, 'uploads/previews/'))) {
+                try {
+                    $url = $s3->getPresignedUrl($url, '+30 minutes');
+                } catch (\Throwable $e) {
+                    Yii::error("Ошибка S3 URL: " . $e->getMessage(), 'form');
+                    $url = null;
+                }
+            }
+
             $groupedData[$data->field_id][] = [
                 'id' => $data->id,
-                'data' => $data->data,
+                'data' => $url,
             ];
         }
+
+        Yii::info($groupedData);
 
         return $this->render('profile', [
             'profileId' => $profileId,
@@ -211,18 +236,9 @@ class SiteController extends Controller
         ]);
     }
 
-    public function actionGetFormFields($form_id)
-    {
-        $formFields = FormField::find()->where(['form_id' => $form_id])->all();
-        return $this->asJson($formFields);
-    }
-
     public function actionCreateFormData()
     {
-        $currentUserId = Yii::$app->user->id;
-        $profile = User::findOne($currentUserId);
         $request = Yii::$app->request;
-        $recInd = Data::find()->select(['max(record_index)'])->scalar() + 1;
 
         if (!$request->isPost) {
             throw new BadRequestHttpException('Only POST allowed');
@@ -230,146 +246,29 @@ class SiteController extends Controller
 
         $formId = $request->post('form_id');
         $fieldValues = $request->post('field_values', []);
+        $fieldFiles = $_FILES['field_files'] ?? [];
 
-        $form = Form::findOne($formId);
-
-        if (empty($formId) || (empty($fieldValues) && empty($_FILES['field_files']['name']))) {
+        if (empty($formId) || (empty($fieldValues) && empty($fieldFiles['name'] ?? []))) {
             Yii::$app->session->setFlash('error', 'Форма или данные пустые');
             return $this->redirect(Yii::$app->request->referrer);
         }
 
-        $uploadDir = Yii::getAlias('@webroot/uploads/');
-        $previewDir = Yii::getAlias('@webroot/uploads/previews/');
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-        if (!is_dir($previewDir)) mkdir($previewDir, 0777, true);
+        $service = new FormService();
+        $success = $service->saveFormData($fieldValues, $fieldFiles, $formId, Yii::$app->user->id);
 
-        $files = [];
-        if (isset($_FILES['field_files'])) {
-            foreach ($_FILES['field_files']['name'] as $fieldId => $name) {
-                if ($_FILES['field_files']['error'][$fieldId] === UPLOAD_ERR_OK) {
-                    $files[$fieldId] = new UploadedFile([
-                        'name' => $_FILES['field_files']['name'][$fieldId],
-                        'tempName' => $_FILES['field_files']['tmp_name'][$fieldId],
-                        'type' => $_FILES['field_files']['type'][$fieldId],
-                        'size' => $_FILES['field_files']['size'][$fieldId],
-                        'error' => $_FILES['field_files']['error'][$fieldId],
-                    ]);
-                }
-            }
-        }
-
-        $allFieldIds = array_unique(array_merge(array_keys($fieldValues), array_keys($files)));
-
-        foreach ($allFieldIds as $fieldId) {
-            $record = new Data();
-            $record->field_id = $fieldId;
-            $record->user_id     = $profile->id;
-            $record->record_index = $recInd;
-
-            $file = $files[$fieldId] ?? null;
-            $value = $fieldValues[$fieldId] ?? null;
-
-            if ($file && is_file($file->tempName)) {
-                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->login);
-                $fileName = uniqid() . '_' . $safeName . '.' . $file->getExtension();
-                $uploadPath = $uploadDir . $fileName;
-
-                if ($file->saveAs($uploadPath)) {
-                    $record->data = 'uploads/' . $fileName;
-
-                    // Генерация превью, если PDF или DOCX
-                    $ext = strtolower($file->getExtension());
-                    if ($ext === 'pdf' || $ext === 'docx') {
-                        $previewPath = $previewDir . pathinfo($fileName, PATHINFO_FILENAME) . '.jpg';
-
-                        try {
-                            if ($ext === 'docx') {
-                                // Преобразовать DOCX → PDF (требует libreoffice)
-                                $convertedPdf = $uploadDir . pathinfo($fileName, PATHINFO_FILENAME) . '.pdf';
-                                $command = 'libreoffice --headless --convert-to pdf --outdir ' . escapeshellarg($uploadDir) . ' ' . escapeshellarg($uploadPath);
-                                exec($command);
-
-                                if (file_exists($convertedPdf)) {
-                                    $imagick = new \Imagick();
-                                    $imagick->setResolution(150, 150);
-                                    $imagick->readImage($convertedPdf . '[0]');
-                                    $imagick->setImageFormat('jpeg');
-                                    $imagick->setImageCompressionQuality(90);
-                                    $imagick->writeImage($previewPath);
-                                    $imagick->clear();
-                                    $imagick->destroy();
-                                    @unlink($convertedPdf);
-                                }
-                            } else {
-                                $imagick = new \Imagick();
-                                $imagick->setResolution(150, 150);
-                                $imagick->readImage($uploadPath . '[0]');
-                                $imagick->setImageFormat('jpeg');
-                                $imagick->setImageCompressionQuality(90);
-                                $imagick->writeImage($previewPath);
-                                $imagick->clear();
-                                $imagick->destroy();
-                            }
-                        } catch (\Exception $e) {
-                            Yii::error('Ошибка создания превью: ' . $e->getMessage(), 'form');
-                        }
-                    }
-                } else {
-                    Yii::$app->session->setFlash('error', 'Ошибка сохранения файла');
-                    return $this->redirect(Yii::$app->request->referrer);
-                }
-            } elseif ($value !== null) {
-                $record->data = $value;
-            } else {
-                continue;
-            }
-
-            if (!$record->save()) {
-                Yii::error($record->getErrors(), 'form');
-                Yii::$app->session->setFlash('error', 'Ошибка сохранения данных');
-                return $this->redirect(Yii::$app->request->referrer);
-            }
-        }
-
-        if ($form->requiresFieldVerification($fieldId)) {
-            $request = new FormConfirmApplication();
-            $request->record_index = $recInd;
-            $request->created_by = $currentUserId;
-
-            $verifier = FormConfirmPerson::find()->where(['form_id' => $formId])->one();
-
-            if ($verifier) {
-                $request->assigned_to = $verifier->user_id;
-                $request->status = 0;
-
-                if ($request->save()) {
-                    Yii::$app->session->setFlash('success', 'Данные отправлены на проверку');
-                } else {
-                    Yii::error($request->getErrors(), 'form');
-                    Yii::$app->session->setFlash('error', 'Ошибка создания запроса на подтверждение');
-                }
-            } else {
-                Yii::$app->session->setFlash('warning', 'Нет назначенного верификатора для этой формы');
-            }
-        } else {
-            $recIndNew = Data::find()->select(['max(record_index)']);
-            $recordsCheck = Data::find()->where(['record_index' => $recIndNew])->all();
-            foreach ($recordsCheck as $record) {
-                $record->verification_status = 1;
-                $record->save();
-            }
-
+        if ($success) {
             Yii::$app->session->setFlash('success', 'Данные успешно сохранены');
+        } else {
+            Yii::$app->session->setFlash('error', 'Ошибка при сохранении данных');
         }
 
         return $this->redirect(Yii::$app->request->referrer);
     }
 
 
+
     public function actionUpdateFormData()
     {
-        $currentUserId = Yii::$app->user->id;
-        $profile = User::findOne($currentUserId);
         $request = Yii::$app->request;
 
         if (!$request->isPost) {
@@ -379,146 +278,23 @@ class SiteController extends Controller
         $formId = $request->post('form_id');
         $fieldValues = $request->post('field_values', []);
         $recordIds = $request->post('record_ids', []);
+        $fieldFiles = $_FILES['field_files'] ?? [];
 
-        if (empty($formId) || (empty($fieldValues) && empty($_FILES['field_files']['name']))) {
+        if (empty($formId) || (empty($fieldValues) && empty($fieldFiles['name'] ?? []))) {
             Yii::$app->session->setFlash('error', 'Форма или данные пустые');
             return $this->redirect(Yii::$app->request->referrer);
         }
 
-        $uploadDir = Yii::getAlias('@webroot/uploads/');
-        $previewDir = Yii::getAlias('@webroot/uploads/previews/');
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-        if (!is_dir($previewDir)) mkdir($previewDir, 0777, true);
+        $service = new FormService();
+        $success = $service->updateFormData($fieldValues, $fieldFiles, $recordIds, $formId, Yii::$app->user->id);
 
-        $files = [];
-        if (isset($_FILES['field_files'])) {
-            foreach ($_FILES['field_files']['name'] as $fieldId => $name) {
-                if ($_FILES['field_files']['error'][$fieldId] === UPLOAD_ERR_OK) {
-                    $files[$fieldId] = new UploadedFile([
-                        'name' => $_FILES['field_files']['name'][$fieldId],
-                        'tempName' => $_FILES['field_files']['tmp_name'][$fieldId],
-                        'type' => $_FILES['field_files']['type'][$fieldId],
-                        'size' => $_FILES['field_files']['size'][$fieldId],
-                        'error' => $_FILES['field_files']['error'][$fieldId],
-                    ]);
-                }
-            }
+        if ($success) {
+            Yii::$app->session->setFlash('success', 'Данные успешно обновлены');
+        } else {
+            Yii::$app->session->setFlash('error', 'Ошибка при обновлении данных');
         }
 
-        $allFieldIds = array_unique(array_merge(array_keys($fieldValues), array_keys($files)));
-
-        foreach ($allFieldIds as $fieldId) {
-            $recordId = $recordIds[$fieldId] ?? null;
-
-            if ($recordId) {
-                $record = Data::findOne(['id' => $recordId, 'user_id' => $profile->id]);
-            } else {
-                $record = Data::find()
-                    ->where(['field_id' => $fieldId, 'user_id' => $profile->id])
-                    ->one();
-            }
-
-            if (!$record) {
-                $record = new Data();
-                $record->field_id = $fieldId;
-                $record->user_id = $profile->id;
-            }
-
-            $file = $files[$fieldId] ?? null;
-            $value = $fieldValues[$fieldId] ?? null;
-
-            if ($file && is_file($file->tempName)) {
-                if ($record->data && strpos($record->data, 'uploads/') === 0) {
-                    $oldFilePath = Yii::getAlias('@webroot/') . $record->data;
-                    if (is_file($oldFilePath)) {
-                        @unlink($oldFilePath);
-                    }
-                }
-
-                $safeName = preg_replace('/[^a-zA-Z0-9_]/', '_', $profile->login);
-                $fileName = uniqid() . '_' . $safeName . '.' . $file->getExtension();
-                $uploadPath = $uploadDir . $fileName;
-
-                if ($file->saveAs($uploadPath)) {
-                    $record->data = 'uploads/' . $fileName;
-
-                    // Генерация превью, если PDF или DOCX
-                    $ext = strtolower($file->getExtension());
-                    if ($ext === 'pdf' || $ext === 'docx') {
-                        $previewPath = $previewDir . pathinfo($fileName, PATHINFO_FILENAME) . '.jpg';
-
-                        try {
-                            if ($ext === 'docx') {
-                                // Преобразовать DOCX → PDF (требует libreoffice)
-                                $convertedPdf = $uploadDir . pathinfo($fileName, PATHINFO_FILENAME) . '.pdf';
-                                $command = 'libreoffice --headless --convert-to pdf --outdir ' . escapeshellarg($uploadDir) . ' ' . escapeshellarg($uploadPath);
-                                exec($command);
-
-                                if (file_exists($convertedPdf)) {
-                                    $imagick = new \Imagick();
-                                    $imagick->setResolution(150, 150);
-                                    $imagick->readImage($convertedPdf . '[0]');
-                                    $imagick->setImageFormat('jpeg');
-                                    $imagick->setImageCompressionQuality(90);
-                                    $imagick->writeImage($previewPath);
-                                    $imagick->clear();
-                                    $imagick->destroy();
-                                    @unlink($convertedPdf);
-                                }
-                            } else {
-                                $imagick = new \Imagick();
-                                $imagick->setResolution(150, 150);
-                                $imagick->readImage($uploadPath . '[0]');
-                                $imagick->setImageFormat('jpeg');
-                                $imagick->setImageCompressionQuality(90);
-                                $imagick->writeImage($previewPath);
-                                $imagick->clear();
-                                $imagick->destroy();
-                            }
-                        } catch (\Exception $e) {
-                            Yii::error('Ошибка создания превью: ' . $e->getMessage(), 'form');
-                        }
-                    }
-
-                } else {
-                    Yii::$app->session->setFlash('error', "Ошибка загрузки файла поля $fieldId");
-                    return $this->redirect(Yii::$app->request->referrer);
-                }
-            } elseif ($value !== null) {
-                if ($record->data && strpos($record->data, 'uploads/') === 0) {
-                    $oldFilePath = Yii::getAlias('@webroot/') . $record->data;
-                    if (is_file($oldFilePath)) {
-                        @unlink($oldFilePath);
-                    }
-                }
-                $record->data = $value;
-            } else {
-                continue;
-            }
-
-            if (!$record->save()) {
-                Yii::error($record->getErrors(), 'form');
-                Yii::$app->session->setFlash('error', "Ошибка при сохранении поля $fieldId");
-                return $this->redirect(Yii::$app->request->referrer);
-            }
-        }
-
-        Yii::$app->session->setFlash('success', 'Данные успешно обновлены');
         return $this->redirect(Yii::$app->request->referrer);
-    }
-
-
-    public function actionViewFormData($form_id)
-    {
-        $userData = Data::find()
-            ->joinWith('formField')
-            ->where(['data.form_id' => $form_id])
-            ->andWhere(['data.user_id' => 1])
-            ->all();
-
-        return $this->render('view-form-data', [
-            'userData' => $userData,
-        ]);
     }
 
     public function actionDeleteFormData()
@@ -532,36 +308,42 @@ class SiteController extends Controller
 
         foreach ($dataIds as $id) {
             $fieldData = Data::findOne($id);
-            if ($fieldData) {
-                // Если поле содержит путь к файлу
-                if ($fieldData->data && strpos($fieldData->data, 'uploads/') === 0) {
-                    $filePath = Yii::getAlias('@webroot/') . $fieldData->data;
+            if (!$fieldData) {
+                continue;
+            }
 
-                    // Удаляем основной файл
-                    if (is_file($filePath)) {
-                        if (!@unlink($filePath)) {
-                            Yii::error("Не удалось удалить файл $filePath", __METHOD__);
-                        }
-                    }
+            $fileKey = $fieldData->data;
 
-                    // Проверяем возможный превью-файл: .pdf или .jpg, .png
-                    $fileInfo = pathinfo($filePath);
-                    $previewPdf = $fileInfo['dirname'] . '/previews/' . $fileInfo['filename'] . '.pdf';
-                    $previewPng = $fileInfo['dirname'] . '/previews/' . $fileInfo['filename'] . '.png';
-                    $previewJpg = $fileInfo['dirname'] . '/previews/' . $fileInfo['filename'] . '.jpg';
-
-                    foreach ([$previewPdf, $previewPng, $previewJpg] as $previewFile) {
-                        if (is_file($previewFile)) {
-                            if (!@unlink($previewFile)) {
-                                Yii::error("Не удалось удалить превью $previewFile", __METHOD__);
-                            }
-                        }
-                    }
+            // Проверяем, что путь начинается с 'uploads/' (файлы на S3)
+            if ($fileKey && is_string($fileKey) && strpos($fileKey, 'uploads/') === 0) {
+                try {
+                    // Удаляем основной файл с S3
+                    Yii::$app->s3->delete($fileKey);
+                } catch (\Throwable $e) {
+                    Yii::error("Ошибка удаления основного файла с S3: $fileKey — " . $e->getMessage(), __METHOD__);
                 }
 
-                // Удаляем запись из базы
-                $fieldData->delete();
+                // Генерируем ключи для возможных превью-файлов
+                $fileInfo = pathinfo($fileKey);
+                $previewPrefix = 'uploads/previews/' . $fileInfo['filename'];
+
+                $previewVariants = [
+                    $previewPrefix . '.jpg',
+                    $previewPrefix . '.png',
+                    $previewPrefix . '.pdf',
+                ];
+
+                foreach ($previewVariants as $previewKey) {
+                    try {
+                        Yii::$app->s3->delete($previewKey);
+                    } catch (\Throwable $e) {
+                        Yii::warning("Ошибка удаления превью с S3: $previewKey — " . $e->getMessage(), __METHOD__);
+                    }
+                }
             }
+
+            // Удаление записи из базы
+            $fieldData->delete();
         }
 
         return ['success' => true];
@@ -569,7 +351,7 @@ class SiteController extends Controller
 
     public function actionFetchProfile($profileId)
     {
-//        Yii::info('testovik', $profileId);
+        $s3 = Yii::$app->s3;
 
         $forms = Form::find()->where(['status' => true])->all();
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->column();
@@ -593,9 +375,21 @@ class SiteController extends Controller
 
         $groupedData = [];
         foreach ($rawData as $data) {
+            $url = $data->data;
+
+            if (is_string($url) && (str_starts_with($url, 'uploads/') || str_starts_with($url, 'uploads/previews/'))) {
+                try {
+                    // Генерация временной ссылки
+                    $url = $s3->getPresignedUrl($url, '+30 minutes');
+                } catch (\Throwable $e) {
+                    Yii::error("Ошибка S3 URL: " . $e->getMessage(), 'form');
+                    $url = null;
+                }
+            }
+
             $groupedData[$data->field_id][] = [
                 'id' => $data->id,
-                'data' => $data->data,
+                'data' => $url,
             ];
         }
 
@@ -608,16 +402,4 @@ class SiteController extends Controller
             'accessGranted' => $accessGranted,
         ]);
     }
-    public function actionSuperUser($profileId)
-    {
-        // проверяем любое из permissions, которые вы реально назначили
-        if (Yii::$app->user->can('/super-user/index')) {
-            return $this->redirect(['/super-user/index', 'profileId' => $profileId]);
-        }
-
-        throw new \yii\web\ForbiddenHttpException('У вас нет доступа к этой странице.');
-    }
-
-
-
 }

@@ -43,11 +43,11 @@ class ConfirmApplicationController extends Controller
 
         $groupedData = [];
         foreach ($userData as $data) {
-            $groupedData[$data->field_id][] = [
-                'id' => $data->id,
-                'data' => $data->data,
-            ];
+            $groupedData[$data->field_id][] = $data->data;
         }
+
+
+        Yii::info($groupedData);
 
         $formFields = FormField::find()->with(['type', 'autocompleteOptions'])->all();
 

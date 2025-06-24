@@ -8,7 +8,6 @@ use yii\bootstrap5\ActiveForm;
 use yii\bootstrap5\Html;
 
 $this->title = 'Login';
-$this->params['breadcrumbs'][] = $this->title;
 ?>
 
 <head>
@@ -18,7 +17,7 @@ $this->params['breadcrumbs'][] = $this->title;
 
 <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
 
-<div class="site-login">
+<div class="container mt-4">
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>Please fill out the following fields to login:</p>

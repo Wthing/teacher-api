@@ -7,6 +7,8 @@
 
 use yii\helpers\Html;
 
+Yii::info($userData);
+
 $this->title = "Заявка №{$model->id}";
 
 /* — mini‑helper — */
@@ -57,20 +59,29 @@ $fmt   = Yii::$app->formatter;
                 Дата создания: <?= $fmt->asDatetime($model->created_at) ?>
             </small>
 
-            <div class="btn-group">
-                <?= Html::a('↩︎ К списку', ['index'], ['class' => 'btn btn-outline-secondary btn-sm']) ?>
+            <div class="d-flex justify-content-center align-items-center gap-1">
+                <?= Html::a('↩︎ К списку', ['index'], ['class' => 'btn btn-outline-secondary btn-sm',
+                    'style' => 'height:32px; padding: 5px;',]) ?>
 
                 <?php if ($model->status === $model::STATUS_PENDING): ?>
-                    <?= Html::a('✅ Подтвердить', ['confirm', 'id' => $model->id], [
-                        'class' => 'btn btn-success btn-sm',
-                        'data-method'  => 'post',
-                        'data-confirm' => 'Подтвердить заявку?'
+                    <?= Html::beginForm(['confirm', 'id' => $model->id], 'post', ['style' => 'display:inline']) ?>
+                    <?= Html::submitButton('<i class="ti ti-check"></i>', [
+                        'class' => 'btn btn-outline-success btn-sm',
+                        'data-confirm' => 'Вы уверены, что хотите подтвердить эту заявку?',
+                        'style' => 'height:32px; width:32px; padding:0;',
+                        'data-bs-toggle' => 'tooltip',
                     ]) ?>
-                    <?= Html::a('❌ Отклонить', ['reject', 'id' => $model->id], [
-                        'class' => 'btn btn-danger btn-sm',
-                        'data-method'  => 'post',
-                        'data-confirm' => 'Отклонить заявку?'
+                    <?= Html::endForm() ?>
+
+                    <?= Html::beginForm(['reject', 'id' => $model->id], 'post', ['style' => 'display:inline']) ?>
+                    <?= Html::submitButton('<i class="ti ti-x"></i>', [
+                        'class' => 'btn btn-outline-danger btn-sm',
+                        'data-confirm' => 'Вы уверены, что хотите отклонить эту заявку?',
+                        'style' => 'height:32px; width:32px; padding:0;',
+                        'data-bs-toggle' => 'tooltip',
                     ]) ?>
+                    <?= Html::endForm() ?>
+
                 <?php endif; ?>
             </div>
         </div>
@@ -81,10 +92,12 @@ $fmt   = Yii::$app->formatter;
 
         // Подготовка данных
         $formFields   = $form->formFields;
-        $fieldDataMap = array_map(
-            fn($f) => $userData[$f->id] ?? [],
-            $formFields
-        );
+        $fieldDataMap = [];
+        foreach ($formFields as $field) {
+            $fieldId = (int)$field->id;
+            $fieldDataMap[$fieldId] = $userData[$fieldId] ?? [];
+        }
+
         $maxRows = max(array_map('count', $fieldDataMap));
 
         if (!$maxRows) { continue; }
@@ -111,24 +124,41 @@ $fmt   = Yii::$app->formatter;
                             <?php foreach ($formFields as $field): ?>
                                 <td>
                                     <?php
-                                    $raw  = $fieldDataMap[$field->id][$r]['data'] ?? $fieldDataMap[$field->id][$r] ?? '';
+                                    $raw = $fieldDataMap[$field->id][$r] ?? '';
                                     $out  = Html::encode($raw);
 
                                     /* — файлы — */
                                     if ($field->type_id == 5 && is_string($raw) && $raw !== '') {
-                                        $ext = strtolower(pathinfo($raw, PATHINFO_EXTENSION));
+                                        $ext = strtolower(pathinfo(parse_url($raw, PHP_URL_PATH), PATHINFO_EXTENSION));
                                         $imgOk = ['jpg','jpeg','png','gif','bmp','webp'];
                                         $docOk = ['pdf','doc','docx','xls','xlsx'];
 
                                         if (in_array($ext, $imgOk)) {
-                                            $src = Yii::getAlias('@web/'.ltrim($raw,'/'));
-                                            $out = Html::img($src,['style'=>'max-width:100px','class'=>'rounded']);
+                                            $out = Html::img($raw, [
+                                                'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                                'class' => 'img-thumbnail',
+                                            ]);
                                         } elseif (in_array($ext,$docOk)) {
-                                            $thumb = Yii::getAlias('@web/uploads/previews/'.ltrim($raw,'/uploads'));
-                                            $thumb = rtrim($thumb,'.'.$ext).'.jpg';
-                                            $out   = Html::a(
-                                                Html::img($thumb,['style'=>'max-width:100px','class'=>'rounded shadow-sm']),
-                                                '/'.$raw, ['target'=>'_blank']
+                                            $parsedPath = parse_url($raw, PHP_URL_PATH);
+                                            $filename = pathinfo($parsedPath, PATHINFO_FILENAME);
+                                            $previewKey = 'uploads/previews/' . $filename . '.jpg';
+
+                                            try {
+                                                $previewUrl = Yii::$app->s3->getPresignedUrl($previewKey, '+30 minutes');
+                                            } catch (\Throwable $e) {
+                                                Yii::error("Ошибка генерации preview S3 URL: " . $e->getMessage(), 'form');
+                                                $previewUrl = null;
+                                            }
+
+                                            Yii::info($previewUrl);
+                                            $out = Html::a(
+                                                Html::img($previewUrl, [
+                                                    'style' => 'max-width: 120px; height: auto; border-radius: 4px;',
+                                                    'class' => 'img-thumbnail',
+                                                    'alt' => 'Превью'
+                                                ]),
+                                                $raw,
+                                                ['target' => '_blank']
                                             );
                                         } else {
                                             $out = Html::a(basename($raw), '/'.$raw, ['target'=>'_blank']);
