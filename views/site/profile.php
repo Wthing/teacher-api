@@ -38,14 +38,6 @@ foreach ($allAutocompleteRows as $entry) {
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="fw-bold mb-0">Профиль: <?= Html::encode($user->username) ?></h2>
 
-            <?php if (Yii::$app->user->can('/super-user/*')): ?>
-                <?= Html::a(
-                    '<i class="ti ti-settings me-1"></i> Перейти в раздел администратора',
-                    ['super-user/'],
-                    ['class' => 'btn btn-primary']
-                ) ?>
-            <?php endif; ?>
-
             <?php if (in_array($profileId, $accessGranted)): ?>
                 <a href="/confirm-application/" class="btn btn-outline-<?= $unreadRequestsCount > 0 ? 'danger' : 'secondary' ?> position-relative">
                     <i class="ti ti-bell"></i>
