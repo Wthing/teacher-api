@@ -7,12 +7,22 @@ use app\models\Form;
 use app\models\FormConfirmApplication;
 use app\models\FormConfirmPerson;
 use app\models\FormField;
+use mdm\admin\components\AccessControl;
 use Yii;
 use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 
 class ConfirmApplicationController extends Controller
 {
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+            ],
+        ];
+    }
+
     public function actionIndex()
     {
         $userId = Yii::$app->user->id;

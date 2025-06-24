@@ -41,14 +41,14 @@ $config = [
 
         's3' => [
             'class' => Service::class,
-            'endpoint' => 'my-endpoint',
+            'endpoint' => $_ENV['S3_ENDPOINT'],
             'usePathStyleEndpoint' => true,
             'credentials' => [ // Aws\Credentials\CredentialsInterface|array|callable
-                'key' => 'my-key',
-                'secret' => 'my-secret',
+                'key' => $_ENV['S3_AUTH_KEY'],
+                'secret' => $_ENV['S3_SECRET_KEY'],
             ],
             'region' => 'my-region',
-            'defaultBucket' => 'my-bucket',
+            'defaultBucket' => $_ENV['S3_BUCKET'],
             'defaultAcl' => 'public-read',
         ],
 
