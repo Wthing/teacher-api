@@ -72,7 +72,7 @@ $forms = $query->orderBy(['id'=>SORT_DESC])->all();
                             <div class="d-flex justify-content-between mb-2">
                                 <h4 class="fs-5 mb-0"><?= Html::encode($form->form_name) ?></h4>
                             </div>
-                            <?php if($disabled):?><span class="badge bg-secondary mb-3">Отключена</span><?php endif;?>
+<!--                            --><?php //if($disabled):?><!--<span class="badge bg-secondary mb-3">Отключена</span>--><?php //endif;?>
                             <div class="mt-auto d-flex gap-2">
                                 <?= Html::button('Подробности',[
                                     'class'=>'btn btn-primary flex-fill toggle-form-btn',
