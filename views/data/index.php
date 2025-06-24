@@ -30,7 +30,7 @@ $availableForms = ArrayHelper::map($allForms, 'id', 'form_name');
 
 <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
 
-<div class="data-search">
+<div class="container mb-4">
 
     <div class="container mb-4">
         <?php $form = ActiveForm::begin([
