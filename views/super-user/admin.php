@@ -20,7 +20,11 @@ $this->registerCsrfMetaTags();
 $fieldTypes   = FormFieldType::find()->all();
 $optionsTypes = Html::renderSelectOptions(null, ArrayHelper::map($fieldTypes, 'id', 'type_name'));
 
-$formFields   = FormField::find()->all();
+$formFields = FormField::find()
+    ->joinWith('form') // название relation — должно быть `form`, не `forms`!
+    ->where(['forms.status' => 1])
+    ->all();
+
 $optionsFields = Html::renderSelectOptions(null,
     ArrayHelper::map($formFields,'id',fn($f)=>"{$f->field_name} ({$f->form->form_name})"));
 
