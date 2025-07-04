@@ -36,6 +36,9 @@ class LoginForm extends Model
         if ($apiData === null) {
             $this->addError('password', 'Неверный логин или пароль');
             return false;
+        } elseif ($apiData['data']['userType'] == 'STUDENT') {
+            $this->addError('login', 'Вы не являетесь преподавателем');
+            return false;
         }
 
         $externalId = (int)$apiData['userId'];
